@@ -1,4 +1,7 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo Tam Tam</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mbolo">
 <style>
 :root{--g:#0b6b3a;--y:#fcd116;--bg:#f6f4ec;--c:#fff;--t:#1d1d1b;--m:#6b6b66;--l:#ddd9cb}
 @media(prefers-color-scheme:dark){:root{--bg:#12140f;--c:#1c1f18;--t:#f1efe6;--m:#a3a39a;--l:#33362d}}
@@ -102,4 +105,54 @@ const txt=JSON.stringify({v:1,pub:S.pub,adm:S.admId,items:[cert,v]});S.led.unshi
 const file=new File([txt],'bon-tamtam.txt',{type:'text/plain'});try{await navigator.share({files:[file],title:`Bon ${cc(d)}`})}catch(e){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt]));a.download='bon-tamtam.txt';a.click()}toast(`Bon de ${cc(d)} prêt`)}
 async function enableAdm(){if(!confirm('Devenir le relais certifié de ce réseau ? À faire une seule fois, sur TON téléphone.'))return;S.adm=S.k.prv;S.pub=S.k.pub;S.admId=S.me.id;S.cert=await sign({t:'c',id:S.me.id,k:S.k.pub},S.adm);save();draw()}
 draw();
-</script></body></html>
+</script>
+<script>
+// ===== PWA : Enregistrement du Service Worker (hors-ligne) =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+<script>
+// ===== PONT NATIF ANDROID (ignoré dans un navigateur / PWA) =====
+(function(){
+  if (typeof Android === 'undefined') return;
+
+  function natShare(txt, name) {
+    try { Android.share(txt, name || 'valise-tamtam.txt'); }
+    catch(e) { try { toast('Partage impossible'); } catch(_){} }
+  }
+
+  try {
+    var _click = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function(){
+      if (this.download && this.href && this.href.indexOf('blob:') === 0) {
+        fetch(this.href).then(function(r){return r.text()})
+          .then(function(t){ natShare(t, this.download) }.bind(this))
+          .catch(function(){ try{ toast('Lecture impossible'); }catch(_){} });
+        return;
+      }
+      return _click.call(this);
+    };
+  } catch(e) {}
+
+  if (typeof bundle === 'function') {
+    window.dl     = function(){ natShare(bundle(), 'valise-tamtam.txt'); };
+    window.shareB = function(){ natShare(bundle(), 'valise-tamtam.txt'); };
+    window.saveLocal = function(){ try { toast(Android.save(bundle(), 'valise-tamtam.txt')); } catch(e){} };
+  }
+
+  try {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: function(t){ Android.copy(String(t)); return Promise.resolve(); } },
+      configurable: true
+    });
+  } catch(e) {}
+
+  if (!window.crypto || !window.crypto.subtle) {
+    setTimeout(function(){ try{ toast('⚠️ Chiffrement indisponible : HTTPS requis'); }catch(_){} }, 800);
+  }
+})();
+</script>
+</body></html>
