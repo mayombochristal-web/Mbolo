@@ -61,6 +61,13 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 // --- ÉTAT LOCAL ---
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
 S=S||{me:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null};
+
+// NETTOYAGE AUTO : Si les anciennes données sont corrompues, on réinitialise
+if(S && !S.posts) S.posts = [];
+if(S && !S.mk) S.mk = [];
+if(S && !S.tun) S.tun = {};
+if(S && !S.led) S.led = [];
+
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
 // --- FORMATAGE & UTILITAIRES ---
@@ -107,6 +114,9 @@ async function draw(){
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
       <p>L'application a rencontré une erreur.</p>
+      <div style="font-size:12px;background:#ffebee;color:#b71c1c;padding:10px;border-radius:8px;margin:10px 0;text-align:left;overflow-x:auto">
+        ${error.message || error}
+      </div>
       <button class="danger" onclick="resetApp()" style="width:100%;margin-top:10px">Réparer l'application</button>
     </div>`;
     console.error(error);
@@ -122,7 +132,6 @@ window.resetApp = () => {
 
 window.start = async () => {
   const n=$('#nm').value.trim(); if(!n)return toast('Entre un nom');
-  // NETTOYAGE COMPLET DE LA MÉMOIRE POUR ÉVITER LES CONFLITS
   S = {
     me: {id:'M'+R(5), name:n},
     k: null,
@@ -131,10 +140,9 @@ window.start = async () => {
     posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null
   };
   try {
-    S.k = await gen(); // Génère la clé crypto
+    S.k = await gen();
   } catch(e) {
     console.error("Erreur crypto", e);
-    toast("Attention : chiffrement non supporté sur ce téléphone.");
   }
   save(); draw();
 };
@@ -152,7 +160,7 @@ async function pay(to,d,m){
 // 1. FIL D'ACTUALITÉ (FIREBASE)
 // ==========================================
 async function fFeed(){
-  const P=[...(S.posts||[])].sort((a,b)=>b.ts-a.ts);
+  const P=[...(S.posts||[])].filter(p => p && p.ts).sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
     <textarea id="px" rows="3" placeholder="Partage une info avec le quartier..."></textarea>
     <button onclick="publierFirebase()" style="width:100%;margin-top:8px">🚀 Publier sur le réseau</button>
@@ -190,7 +198,7 @@ function ecouterPosts() {
   const postsRef = window.FB.ref(window.FB.db, 'posts');
   window.FB.onChildAdded(postsRef, (snapshot) => {
     const post = snapshot.val();
-    if (!post) return; // Sécurité anti-crash
+    if (!post) return;
     if (!S.posts) S.posts = [];
     if (!S.posts.find(p => p.ts === post.ts)) {
       S.posts.push({ id: snapshot.key, a: post.a, n: post.n, x: post.x, ts: post.ts });
@@ -211,7 +219,7 @@ window.tip = async (authorId, authorName, amount) => {
 // 2. MARCHÉ (FIREBASE)
 // ==========================================
 async function fMk(){
-  const M = [...(S.mk||[])].sort((a,b)=>b.ts-a.ts);
+  const M = [...(S.mk||[])].filter(m => m && m.ts).sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
     <h3>Mettre en vente</h3>
     <input id="mt" placeholder="Produit ou service">
@@ -245,7 +253,7 @@ function ecouterMarche() {
   const mkRef = window.FB.ref(window.FB.db, 'marketplace');
   window.FB.onChildAdded(mkRef, (snapshot) => {
     const item = snapshot.val();
-    if (!item) return; // Sécurité anti-crash
+    if (!item) return;
     if (!S.mk) S.mk = [];
     if (!S.mk.find(m => m.ts === item.ts)) {
       S.mk.push(item);
@@ -386,7 +394,7 @@ async function fW(){
 
   <div class="k">
     <h3>Historique</h3>
-    ${(S.led||[]).map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
+    ${(S.led||[]).filter(l=>l && l.ts).map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
       <small>${ago(l.ts)}<br>${esc(l.m)}</small> 
       <b class="${l.d>0?'p':'n'}" style="align-self:center">${l.d>0?'+':''}${kc(l.d)}</b>
     </div>`).join('') || '<small class="m">Aucun mouvement.</small>'}
