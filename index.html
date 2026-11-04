@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V3 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V5 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -37,7 +37,7 @@ button:active{transform:scale(0.97)}
 button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
-button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none}
+button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold}
 @media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
@@ -46,7 +46,6 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);bord
 nav a{flex:1;text-align:center;padding:12px 0 14px;font-size:12px;color:var(--m);cursor:pointer;text-decoration:none;font-weight:600}
 nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;font-size:22px;margin-bottom:4px}
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:25px;display:none;z-index:9;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:600;text-align:center}
-.o{background:var(--y);color:#222;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;margin-left:6px}
 .badge-edu{background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
 .badge-com{background:#e8f5e9;color:#1b5e20;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
 @media(prefers-color-scheme:dark){.badge-edu{background:#0d47a1;color:#e3f2fd}.badge-com{background:#1b5e20;color:#e8f5e9}}
@@ -55,7 +54,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 </style></head><body>
 
-<header><b>🥁 Mbolo V3</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V5</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -66,22 +65,20 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 
 // --- ÉTAT LOCAL ---
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
-S=S||{me:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null};
+S=S||{me:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null,directory:[]};
 
 // NETTOYAGE AUTO
-if(S && !S.posts) S.posts = [];
-if(S && !S.mk) S.mk = [];
-if(S && !S.led) S.led = [];
+if(!S.posts) S.posts = [];
+if(!S.mk) S.mk = [];
+if(!S.led) S.led = [];
+if(!S.directory) S.directory = [];
 
-// MIGRATION: Convertir les anciens tunnels en objets (pour le type et WhatsApp)
+// MIGRATION DES ANCIENS TUNNELS
 if(S.tun){
   for(let k in S.tun){
-    if(typeof S.tun[k] === 'string'){
-      S.tun[k] = { n: S.tun[k], type: 'edu', wa: '' }; // Par défaut on met edu pour l'ancien
-    }
+    if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k], type: 'edu' }; }
   }
 }
-if(!S.tun) S.tun = {};
 
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
@@ -102,7 +99,7 @@ async function enc(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));retu
 async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(a)},k,ub(b)))}catch(e){return null}}
 
 const TK={}; let tab='feed', openT=null, feedFilter='all';
-const TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['ex','🔁','Échange']];
+const TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
 function nav(){
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
@@ -125,7 +122,8 @@ async function draw(){
         </div>
       </div>`; return;
     }
-    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx}[tab])();
+    // Ajout de la route contact
+    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,contact:fContact}[tab])();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
@@ -151,7 +149,7 @@ window.start = async () => {
   S = {
     me: {id:'M'+R(5), name:n},
     k: null, bal: 50, led: [{ts:Date.now(), m:'Bonus de bienvenue', d:50}],
-    posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null
+    posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null, directory: []
   };
   try { S.k = await gen(); } catch(e) { console.error("Erreur crypto", e); }
   save(); draw();
@@ -321,7 +319,6 @@ async function fTun(){
     <h3>📚 Créer une Classe (Enseignant)</h3>
     <p class="m" style="margin-bottom:8px">Ex: Maths 6ème, Français CP1, etc.</p>
     <input id="tn_edu" placeholder="Nom de la classe">
-    <input id="twa_edu" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
     <input id="tp_edu" type="password" placeholder="Clé secrète (mot de passe)">
     <button onclick="mkT('edu')" style="width:100%;background:#0d47a1">Créer la classe</button>
   </div>
@@ -330,7 +327,6 @@ async function fTun(){
     <h3>🛍️ Créer une Boutique (Commerçant)</h3>
     <p class="m" style="margin-bottom:8px">Ex: Vêtements, Nourriture, Services...</p>
     <input id="tn_com" placeholder="Nom de la boutique / catégorie">
-    <input id="twa_com" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
     <input id="tp_com" type="password" placeholder="Clé secrète (mot de passe)">
     <button onclick="mkT('com')" style="width:100%;background:#1b5e20">Créer la boutique</button>
   </div>
@@ -338,7 +334,7 @@ async function fTun(){
   <div class="k">
     <h3>🔑 Rejoindre un tunnel existant</h3>
     <p class="m" style="margin-bottom:8px">Entrez l'ID et la clé partagés par l'enseignant ou le commerçant.</p>
-    <input id="ti" placeholder="ID du tunnel (ex. T-ABC12)">
+    <input id="ti" placeholder="ID du tunnel (ex. CLS-12A)">
     <input id="tq" type="password" placeholder="Clé secrète">
     <button onclick="joinT()" style="width:100%">Rejoindre</button>
   </div>
@@ -346,9 +342,7 @@ async function fTun(){
   <h3 style="margin-top:20px;margin-bottom:10px">Mes Tunnels Rejoints</h3>` +
   (Object.entries(S.tun||{}).length === 0 ? '<p class="m">Aucun tunnel pour le moment.</p>' : '') +
   Object.entries(S.tun||{}).map(([i, t])=>{
-    let icon = '📚';
-    let color = '#0d47a1';
-    let typeName = 'Classe';
+    let icon = '📚'; let color = '#0d47a1'; let typeName = 'Classe';
     if(t.type === 'com') { icon = '🛍️'; color = '#1b5e20'; typeName = 'Boutique'; }
     
     return `<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid ${color};margin-bottom:8px;padding:12px">
@@ -365,12 +359,11 @@ window.mkT = async (type) => {
   const isEdu = type === 'edu';
   const n = $(`#tn_${type}`).value.trim();
   const p = $(`#tp_${type}`).value;
-  const wa = $(`#twa_${type}`).value.trim();
   
   if(!n || !p) return toast('Nom et clé requis');
   const i = (isEdu ? 'CLS-' : 'BQT-') + R(4);
   
-  S.tun[i] = { n: n, type: type, wa: wa }; 
+  S.tun[i] = { n: n, type: type }; 
   TK[i] = await tk(i, p); 
   save(); 
   toast('Tunnel créé ! ID : ' + i); 
@@ -380,7 +373,7 @@ window.mkT = async (type) => {
 window.joinT = async () => {
   const i=$('#ti').value.trim().toUpperCase(), p=$('#tq').value;
   if(!i || !p) return;
-  if(!S.tun[i]) S.tun[i] = { n: 'Tunnel ' + i, type: 'edu', wa: '' }; // Par défaut si inconnu
+  if(!S.tun[i]) S.tun[i] = { n: 'Tunnel ' + i, type: 'edu' };
   TK[i]=await tk(i,p); save(); op(i);
 }
 
@@ -405,7 +398,7 @@ window.op = async (i) => {
 
 async function chat(){
   const i=openT, M=[];
-  const tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu', wa: '' };
+  const tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
   const list = S.msgs.filter(m=>m.i==i).sort((a,b)=>a.ts-b.ts);
   
   for(const m of list){
@@ -418,14 +411,12 @@ async function chat(){
     </div>`);
   }
 
-  let waBtn = '';
-  if(tunnelData.wa){
-    const cleanWa = tunnelData.wa.replace(/\D/g,''); // Garde juste les chiffres
-    waBtn = `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 Contacter le responsable sur WhatsApp</button></a>`;
-  }
-
   let icon = '📚'; let color = '#0d47a1';
   if(tunnelData.type === 'com') { icon = '🛍️'; color = '#1b5e20'; }
+
+  // Bouton pour inviter via WhatsApp (au lieu du contact direct)
+  const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}. (Je te donnerai la clé secrète en privé).`);
+  const inviteBtn = `<a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>`;
   
   return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
@@ -434,7 +425,7 @@ async function chat(){
       <div></div>
     </div>
     
-    ${waBtn}
+    ${inviteBtn}
 
     <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">
       ${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation chiffrée.</p>'}
@@ -508,30 +499,96 @@ window.send = async () => {
 }
 
 // ==========================================
-// 5. ÉCHANGE (BLUETOOTH / SAUVEGARDE)
+// 5. CONTACT / ANNUAIRE (Remplace Échange)
 // ==========================================
-const bundle=()=>JSON.stringify({v:1,me:S.me,bal:S.bal,led:S.led,posts:S.posts,msgs:S.msgs});
-async function fEx(){
-  return `<div class="k">
-    <h3>Sauvegarder / Transférer</h3>
-    <p class="m">Génère un fichier texte avec ton historique et ton solde pour le transférer sur un autre téléphone.</p>
-    <button onclick="shareB()" style="width:100%">📤 Partager ma valise</button>
-    <button class="s" onclick="dl()" style="width:100%">⬇️ Télécharger le fichier</button>
-  </div>
-  <div class="k">
-    <h3>Importer une valise</h3>
-    <input type="file" id="fi" onchange="rf(this)">
-    <textarea id="ft" rows="3" placeholder="Ou colle le texte ici..."></textarea>
-    <button onclick="imp($('#ft').value)" style="width:100%">Importer</button>
+async function fContact(){
+  // On récupère l'annuaire depuis Firebase (stocké localement dans S.directory)
+  const D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
+  
+  const registerForm = `<div class="k">
+    <h3>📇 S'enregistrer dans l'Annuaire</h3>
+    <p class="m" style="margin-bottom:8px">Inscris-toi pour être trouvé par les élèves ou les clients.</p>
+    <input id="dn" placeholder="Ton nom ou celui de ta boutique">
+    <select id="dcat" style="margin-bottom:8px">
+      <option value="edu">📚 Enseignant</option>
+      <option value="com">🛍️ Commerçant</option>
+    </select>
+    <input id="dqu" placeholder="Quartier / Ville (ex: Libreville)">
+    <input id="dwa" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
+    <button onclick="registerDir()" style="width:100%">Publier ma carte</button>
   </div>`;
+
+  const contactList = D.map(c => {
+    let badge = c.cat === 'edu' ? '<span class="badge-edu">📚 Prof</span>' : '<span class="badge-com">🛍️ Commerce</span>';
+    let cleanWa = c.wa ? c.wa.replace(/\D/g,'') : '';
+    let waBtn = cleanWa ? `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 Contacter sur WhatsApp</button></a>` : '<small class="m">Pas de WhatsApp</small>';
+    
+    // Bouton pour lui envoyer une invitation à son tunnel si c'est nous, ou pour l'inviter dans un des nôtres
+    return `<div class="k">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <b>${esc(c.n)}</b> ${badge}
+      </div>
+      <small>📍 ${esc(c.qu)}</small>
+      ${waBtn}
+    </div>`;
+  }).join('') || '<p class="m" style="text-align:center">L\'annuaire est vide. Soyez le premier à vous inscrire !</p>';
+
+  const backupZone = `<div class="k" style="opacity:0.8;margin-top:30px;border-style:dashed">
+    <h3>🛠️ Outils avancés</h3>
+    <p class="m" style="margin-bottom:10px">La sauvegarde permet de transférer ton compte sur un autre téléphone.</p>
+    <button class="s" onclick="shareB()" style="width:100%">📤 Sauvegarder mon compte</button>
+    <button class="s" onclick="document.getElementById('fi').click()" style="width:100%">📥 Restaurer</button>
+    <input type="file" id="fi" onchange="rf(this)" style="display:none">
+  </div>`;
+
+  return registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire du Quartier</h3>` + contactList + backupZone;
 }
 
+window.registerDir = async () => {
+  const n = $('#dn').value.trim();
+  const cat = $('#dcat').value;
+  const qu = $('#dqu').value.trim();
+  const wa = $('#dwa').value.trim();
+  
+  if(!n || !wa) return toast('Nom et numéro WhatsApp requis');
+  if(!window.FB) return toast('Connexion en cours...');
+
+  const item = { a: S.me.id, n: n, cat: cat, qu: qu, wa: wa, ts: Date.now() };
+  
+  try {
+    window.FB.push(window.FB.ref(window.FB.db, 'directory'), item);
+    // On l'ajoute localement pour le voir immédiatement
+    if(!S.directory) S.directory = [];
+    S.directory.push(item);
+    save(); draw();
+    toast('Inscrit dans l\'annuaire !');
+  } catch(e) {
+    toast('Erreur réseau');
+  }
+}
+
+function ecouterAnnuaire() {
+  if (!window.FB) return;
+  const dirRef = window.FB.ref(window.FB.db, 'directory');
+  window.FB.onChildAdded(dirRef, (snapshot) => {
+    const item = snapshot.val();
+    if (!item) return;
+    if (!S.directory) S.directory = [];
+    if (!S.directory.find(d => d.ts === item.ts)) {
+      S.directory.push(item);
+      if (tab === 'contact') draw(); 
+    }
+  });
+}
+
+// FONCTIONS DE SAUVEGARDE (Cachées tout en bas)
+const bundle=()=>JSON.stringify({v:1,me:S.me,bal:S.bal,led:S.led,posts:S.posts,msgs:S.msgs});
 window.shareB = async () => {
-  const f=new File([bundle()],'valise-tamtam.txt',{type:'text/plain'});
-  try{ if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:'Ma valise'}); else dl(); }catch(e){}
+  const f=new File([bundle()],'sauvegarde-mbolo.txt',{type:'text/plain'});
+  try{ if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:'Ma sauvegarde Mbolo'}); else dl(); }catch(e){}
 }
 window.dl = () => {
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bundle()],{type:'text/plain'})); a.download='valise-tamtam.txt'; a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bundle()],{type:'text/plain'})); a.download='sauvegarde-mbolo.txt'; a.click();
 }
 window.rf = (i) => { const r=new FileReader(); r.onload=()=>imp(r.result); r.readAsText(i.files[0]); }
 window.imp = (t) => {
@@ -540,7 +597,7 @@ window.imp = (t) => {
     if(b.me) S.me=b.me;
     if(b.bal) S.bal=b.bal;
     if(b.led) S.led=b.led;
-    save(); draw(); toast('Valise importée avec succès !');
+    save(); draw(); toast('Compte restauré avec succès !');
   } catch(e){ toast('Fichier invalide'); }
 }
 
@@ -548,7 +605,7 @@ window.imp = (t) => {
 // LANCEMENT
 // ==========================================
 draw();
-setTimeout(() => { ecouterPosts(); ecouterMarche(); }, 1000);
+setTimeout(() => { ecouterPosts(); ecouterMarche(); ecouterAnnuaire(); }, 1000);
 
 </script>
 
