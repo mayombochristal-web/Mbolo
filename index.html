@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V7.2 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V8 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -56,6 +56,8 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
 .post-content{margin:10px 0;font-size:15px;line-height:1.5}
 .post-image{width:100%;border-radius:10px;margin-top:8px;max-height:400px;object-fit:cover}
+.file-link{display:flex;align-items:center;background:var(--bg);padding:12px;border-radius:10px;margin-top:8px;text-decoration:none;color:var(--t);border:1px solid var(--l);font-weight:bold}
+.file-link:hover{background:var(--l)}
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 .msg-box{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600;text-align:center}
 .msg-success{background:#e8f5e9;color:#1b5e20;border:1px solid #1b5e20}
@@ -67,7 +69,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V7.2</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V8</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -109,9 +111,22 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-async function uploadImage(file) {
+// Fonction d'affichage intelligente (Image ou PDF)
+function renderAttachment(url) {
+  if (!url) return '';
+  const lowUrl = url.toLowerCase();
+  if (lowUrl.endsWith('.pdf')) {
+    return `<a href="${url}" target="_blank" class="file-link">📄 Télécharger le document PDF</a>`;
+  } else if (lowUrl.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+    return `<img src="${url}" class="post-image">`;
+  } else {
+    return `<a href="${url}" target="_blank" class="file-link">📎 Télécharger le fichier</a>`;
+  }
+}
+
+async function uploadFile(file) {
   if(!file) return null;
-  toast('Envoi de l\'image...');
+  toast('Envoi du fichier...');
   const formData = new FormData();
   formData.append('reqtype', 'fileupload');
   formData.append('fileToUpload', file);
@@ -129,46 +144,31 @@ function nav(){
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
 
-// --- AUTHENTIFICATION (ONGLETS SÉPARÉS) ---
-let authMode = 'login'; // 'login' ou 'register'
+// --- AUTHENTIFICATION ---
+let authMode = 'login';
 let authMsg = { type: '', text: '' };
 
 window.switchAuthTab = (mode) => {
-  authMode = mode;
-  authMsg = { type: '', text: '' };
-  draw();
+  authMode = mode; authMsg = { type: '', text: '' }; draw();
 };
 
 async function fAuth(){
-  let msgHtml = '';
-  if (authMsg.text) {
-    msgHtml = `<div class="msg-box ${authMsg.type === 'success' ? 'msg-success' : 'msg-error'}">${authMsg.text}</div>`;
-  }
-  
+  let msgHtml = authMsg.text ? `<div class="msg-box ${authMsg.type === 'success' ? 'msg-success' : 'msg-error'}">${authMsg.text}</div>` : '';
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V7.2</h2>
-    
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V8</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
     </div>
-
     ${msgHtml}
-    
     <input id="authUser" placeholder="Ton pseudo (ex: aldo)" autocomplete="username">
     <input id="authPass" type="password" placeholder="Ton mot de passe" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
-    
-    ${!isLogin ? `
-      <input id="authRef" placeholder="Code parrain (optionnel)">
-      <p class="m" style="font-size:11px">Si tu as été parrainé, met le code de ton ami pour qu'il gagne des KC.</p>
-    ` : ''}
-    
+    ${!isLogin ? `<input id="authRef" placeholder="Code parrain (optionnel)">` : ''}
     <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">
       ${isLogin ? 'Se connecter' : 'Créer mon compte'}
     </button>
-    
     <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px;text-align:center">
       <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici</small>
     </div>
@@ -181,27 +181,17 @@ window.loginUser = async () => {
   const refCode = $('#authRef')?.value.trim() || '';
   const btn = $('#btnLogin');
   
-  if(!pseudo || pass.length < 6) {
-    authMsg = { type: 'error', text: 'Pseudo et mot de passe (6 car. min) requis' };
-    draw(); return;
-  }
+  if(!pseudo || pass.length < 6) { authMsg = { type: 'error', text: 'Pseudo et mot de passe (6 car. min) requis' }; draw(); return; }
   
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Connexion en cours...';
-  authMsg = { type: '', text: '' };
-  
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Chargement...'; authMsg = { type: '', text: '' };
   const email = `${pseudo}@mbolo.app`;
   const isLogin = authMode === 'login';
 
   try {
     if(!isLogin) {
-      // INSCRIPTION
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
-      
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), {
-        name: pseudo, bal: 0, joined: Date.now(), refCode: refCode
-      });
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { name: pseudo, bal: 0, joined: Date.now(), refCode: refCode });
 
       if(refCode) {
         const allUsers = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
@@ -209,38 +199,27 @@ window.loginUser = async () => {
           const users = allUsers.val();
           const parrainId = Object.keys(users).find(k => k === refCode);
           if(parrainId) {
-            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + parrainId), (curr) => {
-              if(curr) curr.bal = (curr.bal || 0) + 50; return curr;
-            });
-            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => {
-              if(curr) curr.bal = (curr.bal || 0) + 50; return curr;
-            });
-            authMsg = { type: 'success', text: 'Compte créé ! Bonus de parrainage : +5 KC' };
+            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + parrainId), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
+            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
+            authMsg = { type: 'success', text: 'Compte créé ! Bonus : +5 KC' };
           }
         }
       }
-      authMsg = { type: 'success', text: 'Compte créé avec succès ! Redirection...' };
+      authMsg = { type: 'success', text: 'Compte créé avec succès !' };
     } else {
-      // CONNEXION
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
-      // Le onAuthStateChanged va prendre le relais
     }
   } catch (error) {
-    btn.disabled = false;
-    btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
-    
+    btn.disabled = false; btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
     let errMsg = 'Une erreur est survenue.';
-    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris. Change de pseudo ou connecte-toi.';
+    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris.';
     else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
-    else if (error.code === 'auth/weak-password') errMsg = '❌ Mot de passe trop faible (6 caractères min).';
-    else if (error.code === 'auth/network-request-failed') errMsg = '❌ Problème de connexion internet. Réessaie.';
-    else if (error.code === 'auth/too-many-requests') errMsg = '❌ Trop de tentatives. Patiente un instant.';
-    
-    authMsg = { type: 'error', text: errMsg };
-    draw();
+    else if (error.code === 'auth/weak-password') errMsg = '❌ Mot de passe trop faible.';
+    authMsg = { type: 'error', text: errMsg }; draw();
   }
 };
 
+// --- SYNCHRONISATION (Efface les vieux messages locaux) ---
 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
@@ -250,17 +229,22 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       S.me = { id: user.uid.substring(0,6).toUpperCase(), name: data.name };
       S.bal = data.bal || 0;
     } else {
-      // Si le profil manque sur Firebase (bug), on le crée automatiquement
       const fallbackName = user.email.split('@')[0];
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + user.uid), {
-        name: fallbackName, bal: 0, joined: Date.now()
-      });
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + user.uid), { name: fallbackName, bal: 0, joined: Date.now() });
       S.me = { id: user.uid.substring(0,6).toUpperCase(), name: fallbackName };
       S.bal = 0;
     }
-    save(); draw();
+    // NETTOYAGE : On vide les posts locaux pour être sûr d'avoir les vrais de Firebase
+    S.posts = []; 
+    S.mk = [];
+    save(); 
+    draw();
+    // On lance l'écoute
+    ecouterPosts();
+    ecouterMarche();
+    ecouterAnnuaire();
   } else {
-    S.me = null; S.uid = null; draw();
+    S.me = null; S.uid = null; S.posts = []; S.mk = []; save(); draw();
   }
 });
 
@@ -269,28 +253,16 @@ async function transferKC(toUid, amountKc, reason) {
   if(!S.uid) return false;
   if(S.bal < amountKc) { toast('Solde insuffisant'); return false; }
   const amountToSend = Math.round(amountKc);
-  
   try {
-    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid), (curr) => {
-      if (curr && curr.bal >= amountToSend) curr.bal -= amountToSend;
-      return curr;
-    });
-    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + toUid), (curr) => {
-      if (curr) { curr.bal = (curr.bal || 0) + amountToSend; }
-      return curr;
-    });
-    window.FB.push(window.FB.ref(window.FB.db, 'transactions'), {
-      from: S.uid, to: toUid, amount: amountToSend, reason: reason, ts: Date.now()
-    });
-    S.led.unshift({ts:Date.now(), m:'Envoi ('+reason+')', d:-amountToSend});
-    save(); return true;
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid), (curr) => { if (curr && curr.bal >= amountToSend) curr.bal -= amountToSend; return curr; });
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + toUid), (curr) => { if (curr) { curr.bal = (curr.bal || 0) + amountToSend; } return curr; });
+    window.FB.push(window.FB.ref(window.FB.db, 'transactions'), { from: S.uid, to: toUid, amount: amountToSend, reason: reason, ts: Date.now() });
+    S.led.unshift({ts:Date.now(), m:'Envoi ('+reason+')', d:-amountToSend}); save(); return true;
   } catch(e) { toast('Erreur réseau'); return false; }
 }
 
 window.tip = async (authorUid, authorName, amount) => {
-  if(await transferKC(authorUid, amount, 'Pourboire')) {
-    toast('Merci envoyé à ' + authorName + ' 🙏'); draw();
-  }
+  if(await transferKC(authorUid, amount, 'Pourboire')) { toast('Merci envoyé à ' + authorName + ' 🙏'); draw(); }
 }
 
 async function draw(){
@@ -308,7 +280,7 @@ async function draw(){
 }
 
 // ==========================================
-// 1. FIL D'ACTUALITÉ
+// 1. FIL D'ACTUALITÉ (PDF SUPPORTÉS)
 // ==========================================
 async function fFeed(){
   let P=[...(S.posts||[])].filter(p => p && p.ts);
@@ -324,7 +296,7 @@ async function fFeed(){
 
   const postForm = `<div class="k">
     <textarea id="px" rows="2" placeholder="Partage une info..."></textarea>
-    <input type="file" id="pimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
+    <input type="file" id="pimg" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:5px">
     <select id="pcat" style="margin-bottom:8px">
       <option value="gen">Discussion Générale</option>
       <option value="edu">📚 Éducation / Cours</option>
@@ -340,7 +312,7 @@ async function fFeed(){
         <div><b>${esc(p.n)}</b> ${badge}</div><small>${ago(p.ts)}</small>
       </div>
       <div class="post-content">${esc(p.x)}</div>
-      ${p.img ? `<img src="${p.img}" class="post-image">` : ''}
+      ${renderAttachment(p.img)}
       ${p.a==S.uid?'':`<div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
@@ -356,9 +328,9 @@ window.publierFirebase = async () => {
   const texte = $('#px').value.trim();
   const cat = $('#pcat').value;
   const file = $('#pimg').files[0];
-  if (!texte && !file) return toast('Écris un texte ou ajoute une image');
+  if (!texte && !file) return toast('Écris un texte ou ajoute un fichier');
   let imgUrl = null;
-  if(file) imgUrl = await uploadImage(file);
+  if(file) imgUrl = await uploadFile(file);
   const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, img: imgUrl, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
@@ -366,15 +338,20 @@ window.publierFirebase = async () => {
   } catch (e) { toast('Erreur réseau'); }
 };
 
+// ON REMPLACE ONCHILDADDED PAR ONVALUE POUR AVOIR LA LISTE EXACTE
 function ecouterPosts() {
   if (!window.FB) return;
-  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
-    const post = snapshot.val(); if (!post) return;
-    if (!S.posts) S.posts = [];
-    if (!S.posts.find(p => p.ts === post.ts)) {
-      S.posts.push({ id: snapshot.key, a: post.a, n: post.n, x: post.x, cat: post.cat || 'gen', img: post.img, ts: post.ts });
-      if (tab === 'feed') draw(); 
+  window.FB.onValue(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
+    const data = snapshot.val();
+    S.posts = [];
+    if(data) {
+      Object.keys(data).forEach(key => {
+        const p = data[key];
+        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', img: p.img, ts: p.ts });
+      });
     }
+    save();
+    if (tab === 'feed') draw(); 
   });
 }
 
@@ -388,14 +365,14 @@ async function fMk(){
     <input id="mt" placeholder="Nom du produit">
     <input id="mp" type="number" step="1" placeholder="Prix en KC">
     <textarea id="md" rows="2" placeholder="Description..."></textarea>
-    <input type="file" id="mimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
+    <input type="file" id="mimg" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:5px">
     <button onclick="sell()" style="width:100%">Publier l'annonce</button>
   </div>` +
   (M.map(l=>`<div class="k">
     <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
     <small>Vendeur : ${esc(l.n)}</small>
     <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
-    ${l.img ? `<img src="${l.img}" class="post-image">` : ''}
+    ${renderAttachment(l.img)}
     ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
   </div>`).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
 }
@@ -404,7 +381,7 @@ window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim(), file=$('#mimg').files[0];
   if(!t || !p || p<=0) return toast('Titre et prix requis');
   let imgUrl = null;
-  if(file) imgUrl = await uploadImage(file);
+  if(file) imgUrl = await uploadFile(file);
   const d = Math.round(p*10); 
   const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, img: imgUrl, ts: Date.now() };
   try {
@@ -415,10 +392,16 @@ window.sell = async () => {
 
 function ecouterMarche() {
   if (!window.FB) return;
-  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
-    const item = snapshot.val(); if (!item) return;
-    if (!S.mk) S.mk = [];
-    if (!S.mk.find(m => m.ts === item.ts)) { S.mk.push(item); if (tab === 'mk') draw(); }
+  window.FB.onValue(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
+    const data = snapshot.val();
+    S.mk = [];
+    if(data) {
+      Object.keys(data).forEach(key => {
+        S.mk.push(data[key]);
+      });
+    }
+    save();
+    if (tab === 'mk') draw(); 
   });
 }
 
@@ -488,10 +471,7 @@ window.joinT = async () => {
 }
 
 window.op = async (i) => {
-  if(!TK[i]){
-    const p=prompt('Entrez la clé secrète');
-    if(!p) return; TK[i]=await tk(i,p);
-  }
+  if(!TK[i]){ const p=prompt('Entrez la clé secrète'); if(!p) return; TK[i]=await tk(i,p); }
   openT=i; draw();
   if (!window.FB) return;
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
@@ -680,7 +660,6 @@ window.draw = async function() {
 // LANCEMENT
 // ==========================================
 draw();
-setTimeout(() => { ecouterPosts(); ecouterMarche(); ecouterAnnuaire(); }, 1000);
 
 </script>
 
