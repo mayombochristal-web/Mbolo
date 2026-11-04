@@ -7,7 +7,7 @@
 <!-- ========================================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBJolSavlqAMLhRSTwk0pUh0ojiw5Qbiko",
@@ -43,6 +43,7 @@ button:active{transform:scale(0.97)}
 button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
 @media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
+button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
 h3{margin:8px 0;font-size:18px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--l);z-index:5}
@@ -94,17 +95,38 @@ function nav(){
 window.go = t => {tab=t;openT=null;draw()};
 
 async function draw(){
-  nav(); const v=$('#v');
-  if(!S.me){
-    v.innerHTML=`<div class="k" style="text-align:center;padding:30px 16px">
-      <h2 style="color:var(--g)">Mbolo ! 👋</h2>
-      <p>Bienvenue sur le réseau du quartier.</p>
-      <input id="nm" placeholder="Ton prénom ou pseudo" style="margin-top:20px">
-      <button onclick="start()" style="width:100%;margin-top:10px">Commencer l'aventure</button>
-    </div>`; return;
+  try {
+    nav(); const v=$('#v');
+    if(!S.me){
+      v.innerHTML=`<div class="k" style="text-align:center;padding:30px 16px">
+        <h2 style="color:var(--g)">Mbolo ! 👋</h2>
+        <p>Bienvenue sur le réseau du quartier.</p>
+        <input id="nm" placeholder="Ton prénom ou pseudo" style="margin-top:20px">
+        <button onclick="start()" style="width:100%;margin-top:10px">Commencer l'aventure</button>
+        <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px">
+          <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici pour réparer</small>
+        </div>
+      </div>`; return;
+    }
+    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx,adm:fAdm}[tab])();
+  } catch (error) {
+    // BOUCLIER ANTI-PLANTAGE
+    $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
+      <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
+      <p>L'application a rencontré une erreur (souvent due à une ancienne sauvegarde).</p>
+      <button class="danger" onclick="resetApp()" style="width:100%;margin-top:10px">Réparer l'application</button>
+    </div>`;
+    console.error(error);
   }
-  v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx,adm:fAdm}[tab])();
 }
+
+// FONCTION DE SECOURS
+window.resetApp = () => {
+  if (confirm("⚠️ ATTENTION : Cela va effacer tes données locales (solde, messages) pour réparer l'application. Continuer ?")) {
+    localStorage.clear();
+    location.reload();
+  }
+};
 
 window.start = async () => {
   const n=$('#nm').value.trim(); if(!n)return toast('Entre un nom');
@@ -116,6 +138,7 @@ window.start = async () => {
 // ---- ÉCHANGES & PAIEMENTS ----
 function out(o){return sign(o,S.k.prv).then(it=>{if(S.cert)it.c=S.cert;S.used[o.id]=1;S.relay.push(it);S.relay=S.relay.slice(-300);return it})}
 async function pay(to,d,m){
+  if(!S.k) return toast('Erreur de sécurité, reconnecte-toi');
   if(d<=0||S.bal<d){toast('Solde insuffisant');return false}
   S.bal-=d; S.led.unshift({ts:Date.now(),m:'Envoi à '+to+(m?' · '+m:''),d:-d});
   await out({t:'x',id:R(10),f:S.me.id,to,d,m,ts:Date.now()}); save(); return true;
@@ -199,13 +222,25 @@ async function fMk(){
 window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim();
   if(!t || !p || p<=0) return toast('Titre et prix valides requis');
-  const d = Math.round(p*10); // Conversion KC (ex: 5 KC = 50 unités internes)
+  const d = Math.round(p*10); // Conversion KC
   
   const item = { id: R(8), a: S.me.id, n: S.me.name, t, d, x, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
     S.mk.push(item); save(); draw(); toast('Annonce publiée !');
   } catch(e) { toast('Erreur réseau'); }
+}
+
+// ÉCOUTE DU MARCHÉ EN TEMPS RÉEL (Nouveau)
+function ecouterMarche() {
+  const mkRef = window.FB.ref(window.FB.db, 'marketplace');
+  window.FB.onChildAdded(mkRef, (snapshot) => {
+    const item = snapshot.val();
+    if (!S.mk.find(m => m.ts === item.ts)) {
+      S.mk.push(item);
+      if (tab === 'mk') draw(); 
+    }
+  });
 }
 
 window.buy = async (id, sellerId, title, price) => {
@@ -258,7 +293,6 @@ window.op = async (i) => {
   }
   openT=i; draw();
   
-  // Écouter les messages de ce tunnel via Firebase
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
     const m = snap.val();
     if(!S.msgs.find(x=>x.ts === m.ts)) {
@@ -303,10 +337,8 @@ window.snd = async () => {
   const c = await enc(TK[openT], t);
   const m = { ts: Date.now(), n: S.me.name, c };
   
-  // Envoi à Firebase (le texte y est déjà chiffré, illisible pour Firebase)
   window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
   $('#cm').value='';
-  // On l'ajoute localement instantanément
   if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
   setTimeout(()=>{const cb=$('#chat-box'); if(cb)cb.scrollTop=cb.scrollHeight;},100);
 }
@@ -400,7 +432,7 @@ window.imp = (t) => {
 // LANCEMENT
 // ==========================================
 draw();
-setTimeout(ecouterPosts, 1000);
+setTimeout(() => { ecouterPosts(); ecouterMarche(); }, 1000);
 
 </script>
 
