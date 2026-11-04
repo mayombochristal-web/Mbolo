@@ -2,9 +2,6 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
-<!-- ========================================== -->
-<!-- CONNEXION FIREBASE                         -->
-<!-- ========================================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -16,14 +13,11 @@
     projectId: "mbolo-81868",
     storageBucket: "mbolo-81868.firebasestorage.app",
     messagingSenderId: "265201834213",
-    appId: "1:265201834213:web:10d2593770cf1d02799c0c",
-    measurementId: "G-9WSKGNR6ZE"
+    appId: "1:265201834213:web:10d2593770cf1d02799c0c"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  
-  // On expose Firebase à l'application globale
   window.FB = { ref, push, onChildAdded, db };
 </script>
 
@@ -110,17 +104,15 @@ async function draw(){
     }
     v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx,adm:fAdm}[tab])();
   } catch (error) {
-    // BOUCLIER ANTI-PLANTAGE
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
-      <p>L'application a rencontré une erreur (souvent due à une ancienne sauvegarde).</p>
+      <p>L'application a rencontré une erreur.</p>
       <button class="danger" onclick="resetApp()" style="width:100%;margin-top:10px">Réparer l'application</button>
     </div>`;
     console.error(error);
   }
 }
 
-// FONCTION DE SECOURS
 window.resetApp = () => {
   if (confirm("⚠️ ATTENTION : Cela va effacer tes données locales (solde, messages) pour réparer l'application. Continuer ?")) {
     localStorage.clear();
@@ -130,8 +122,20 @@ window.resetApp = () => {
 
 window.start = async () => {
   const n=$('#nm').value.trim(); if(!n)return toast('Entre un nom');
-  S.me={id:'M'+R(5),name:n}; S.k=await gen(); S.bal=50; // 5 KC de bienvenue
-  S.led.unshift({ts:Date.now(),m:'Bonus de bienvenue',d:50});
+  // NETTOYAGE COMPLET DE LA MÉMOIRE POUR ÉVITER LES CONFLITS
+  S = {
+    me: {id:'M'+R(5), name:n},
+    k: null,
+    bal: 50,
+    led: [{ts:Date.now(), m:'Bonus de bienvenue', d:50}],
+    posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null
+  };
+  try {
+    S.k = await gen(); // Génère la clé crypto
+  } catch(e) {
+    console.error("Erreur crypto", e);
+    toast("Attention : chiffrement non supporté sur ce téléphone.");
+  }
   save(); draw();
 };
 
@@ -148,7 +152,7 @@ async function pay(to,d,m){
 // 1. FIL D'ACTUALITÉ (FIREBASE)
 // ==========================================
 async function fFeed(){
-  const P=[...S.posts].sort((a,b)=>b.ts-a.ts);
+  const P=[...(S.posts||[])].sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
     <textarea id="px" rows="3" placeholder="Partage une info avec le quartier..."></textarea>
     <button onclick="publierFirebase()" style="width:100%;margin-top:8px">🚀 Publier sur le réseau</button>
@@ -171,6 +175,7 @@ async function fFeed(){
 window.publierFirebase = async () => {
   const texte = $('#px').value.trim();
   if (!texte) return toast('Écris quelque chose');
+  if (!window.FB) return toast('Connexion au réseau en cours...');
   
   const postData = { a: S.me.id, n: S.me.name, x: texte, ts: Date.now() };
   try {
@@ -181,9 +186,12 @@ window.publierFirebase = async () => {
 };
 
 function ecouterPosts() {
+  if (!window.FB) return;
   const postsRef = window.FB.ref(window.FB.db, 'posts');
   window.FB.onChildAdded(postsRef, (snapshot) => {
     const post = snapshot.val();
+    if (!post) return; // Sécurité anti-crash
+    if (!S.posts) S.posts = [];
     if (!S.posts.find(p => p.ts === post.ts)) {
       S.posts.push({ id: snapshot.key, a: post.a, n: post.n, x: post.x, ts: post.ts });
       if (tab === 'feed') draw(); 
@@ -203,7 +211,7 @@ window.tip = async (authorId, authorName, amount) => {
 // 2. MARCHÉ (FIREBASE)
 // ==========================================
 async function fMk(){
-  const M = [...S.mk].sort((a,b)=>b.ts-a.ts);
+  const M = [...(S.mk||[])].sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
     <h3>Mettre en vente</h3>
     <input id="mt" placeholder="Produit ou service">
@@ -222,7 +230,8 @@ async function fMk(){
 window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim();
   if(!t || !p || p<=0) return toast('Titre et prix valides requis');
-  const d = Math.round(p*10); // Conversion KC
+  if (!window.FB) return toast('Connexion au réseau en cours...');
+  const d = Math.round(p*10); 
   
   const item = { id: R(8), a: S.me.id, n: S.me.name, t, d, x, ts: Date.now() };
   try {
@@ -231,11 +240,13 @@ window.sell = async () => {
   } catch(e) { toast('Erreur réseau'); }
 }
 
-// ÉCOUTE DU MARCHÉ EN TEMPS RÉEL (Nouveau)
 function ecouterMarche() {
+  if (!window.FB) return;
   const mkRef = window.FB.ref(window.FB.db, 'marketplace');
   window.FB.onChildAdded(mkRef, (snapshot) => {
     const item = snapshot.val();
+    if (!item) return; // Sécurité anti-crash
+    if (!S.mk) S.mk = [];
     if (!S.mk.find(m => m.ts === item.ts)) {
       S.mk.push(item);
       if (tab === 'mk') draw(); 
@@ -268,7 +279,7 @@ async function fTun(){
     <input id="tq" type="password" placeholder="Clé secrète">
     <button onclick="joinT()" style="width:100%">Rejoindre</button>
   </div>` +
-  Object.entries(S.tun).map(([i,n])=>`<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid var(--g)">
+  Object.entries(S.tun||{}).map(([i,n])=>`<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid var(--g)">
     <b>🔒 ${esc(n)}</b><br><small>ID : ${i}</small>
   </div>`).join('');
 }
@@ -293,8 +304,11 @@ window.op = async (i) => {
   }
   openT=i; draw();
   
+  if (!window.FB) return;
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
     const m = snap.val();
+    if(!m) return;
+    if(!S.msgs) S.msgs = [];
     if(!S.msgs.find(x=>x.ts === m.ts)) {
       S.msgs.push({ i, ts: m.ts, n: m.n, c: m.c });
       if(openT === i) draw();
@@ -334,6 +348,7 @@ async function chat(){
 
 window.snd = async () => {
   const t=$('#cm').value.trim(); if(!t)return;
+  if (!window.FB) return toast('Connexion en cours...');
   const c = await enc(TK[openT], t);
   const m = { ts: Date.now(), n: S.me.name, c };
   
@@ -371,7 +386,7 @@ async function fW(){
 
   <div class="k">
     <h3>Historique</h3>
-    ${S.led.map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
+    ${(S.led||[]).map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
       <small>${ago(l.ts)}<br>${esc(l.m)}</small> 
       <b class="${l.d>0?'p':'n'}" style="align-self:center">${l.d>0?'+':''}${kc(l.d)}</b>
     </div>`).join('') || '<small class="m">Aucun mouvement.</small>'}
