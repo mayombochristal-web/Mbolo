@@ -1,10 +1,10 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V9 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V10 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -21,7 +21,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
-  window.FB = { ref, push, onChildAdded, onValue, set, update, runTransaction, get, db, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut };
+  window.FB = { ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast, db, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut };
 </script>
 
 <style>
@@ -42,7 +42,6 @@ button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
 button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold}
-button.dl-btn{background:#0d47a1;color:#fff;margin-top:10px;width:100%;text-align:center;display:block;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold;border:0}
 @media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
@@ -57,7 +56,6 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
 .post-content{margin:10px 0;font-size:15px;line-height:1.5;white-space:pre-wrap}
 .post-thumb{width:100%;border-radius:10px;margin-top:8px;max-height:300px;object-fit:cover;display:block;background:#eee}
-.pdf-thumb{display:flex;align-items:center;justify-content:center;background:#ffebee;height:120px;border-radius:10px;margin-top:8px;border:1px dashed #b71c1c}
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 .msg-box{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600;text-align:center}
 .msg-success{background:#e8f5e9;color:#1b5e20;border:1px solid #1b5e20}
@@ -69,7 +67,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V9</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V10</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -82,15 +80,11 @@ const AIRTEL_NUMBER = '24177765496';
 const COMMISSION_RATE = 0.03;
 
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
-S=S||{me:null,uid:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null,directory:[]};
+S=S||{me:null,uid:null,code:null,bal:0,isAdmin:false,posts:[],mk:[],directory:[]};
 
 if(!S.posts) S.posts = [];
 if(!S.mk) S.mk = [];
-if(!S.led) S.led = [];
 if(!S.directory) S.directory = [];
-if(!S.tun) S.tun = {};
-
-for(let k in S.tun){ if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k], type: 'edu' }; } }
 
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
@@ -101,9 +95,6 @@ function toast(m){const t=$('#to');t.textContent=m;t.style.display='block';setTi
 
 // --- CRYPTOGRAPHIE ---
 const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-async function gen(){const k=await crypto.subtle.generateKey(AL,true,['sign','verify']);return{pub:await crypto.subtle.exportKey('jwk',k.publicKey),prv:await crypto.subtle.exportKey('jwk',k.privateKey)}}
-const ik=(j,u)=>crypto.subtle.importKey('jwk',j,AL,false,[u]);
-async function sign(o,prv){const p=JSON.stringify(o);return{p,s:b64(await crypto.subtle.sign(SG,await ik(prv,'sign'),E.encode(p)))}}
 async function tk(tid,pw){const m=await crypto.subtle.importKey('raw',E.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:E.encode(tid),iterations:100000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function enc(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));return b64(iv)+'.'+b64(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,E.encode(t)))}
 async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(a)},k,ub(b)))}catch(e){return null}}
@@ -111,14 +102,10 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// --- UPLOAD IMAGE LÉGER & SÉCURISÉ ---
-// Génère une miniature compressée pour Firebase
+// --- UPLOAD FICHIERS (Miniatures) ---
 function generateThumbnail(file) {
   return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
-      // Si c'est un PDF, on renvoie null (on affichera une icône PDF)
-      resolve(null); return;
-    }
+    if (!file.type.startsWith('image/')) { resolve(null); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -126,11 +113,10 @@ function generateThumbnail(file) {
         const canvas = document.createElement('canvas');
         const MAX_WIDTH = 400;
         const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
+        canvas.width = MAX_WIDTH; canvas.height = img.height * scale;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.5)); // Compression à 50%
+        resolve(canvas.toDataURL('image/jpeg', 0.5));
       };
       img.src = e.target.result;
     };
@@ -138,39 +124,8 @@ function generateThumbnail(file) {
   });
 }
 
-// Upload le fichier lourd (chiffré ou non) sur le serveur
-async function uploadFile(file, shouldEncrypt) {
-  if(!file) return { url: null, fname: '' };
-  toast('Envoi du fichier sur le serveur...');
-  
-  let fileToUpload = file;
-  let fname = file.name;
-
-  if (shouldEncrypt) {
-    // Chiffrement binaire du fichier
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const key = await tk('file_encryption', 'mbolo-secret-key-2024'); // Clé de démo
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, arrayBuffer);
-      fileToUpload = new Blob([iv, encrypted], { type: 'application/octet-stream' });
-      fname = fname + '.enc';
-    } catch(e) { toast('Erreur chiffrement fichier'); return { url: null, fname: '' }; }
-  }
-
-  const formData = new FormData();
-  formData.append('reqtype', 'fileupload');
-  formData.append('fileToUpload', fileToUpload, fname);
-
-  try {
-    const res = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: formData });
-    const url = await res.text();
-    return { url: url, fname: fname };
-  } catch(e) { toast('Erreur upload'); return { url: null, fname: '' }; }
-}
-
 function nav(){
-  if(S.me && S.uid === 'admin') { if(!TABS.find(t=>t[0]==='adm')) TABS.push(['adm','🛡️','Admin']); }
+  if(S.isAdmin && !TABS.find(t=>t[0]==='adm')) { TABS.push(['adm','🛡️','Admin']); }
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
@@ -190,15 +145,14 @@ async function fAuth(){
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V9</h2>
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V10</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
     </div>
     ${msgHtml}
-    <input id="authUser" placeholder="Ton pseudo (ex: aldo)" autocomplete="username">
-    <input id="authPass" type="password" placeholder="Ton mot de passe" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
-    ${!isLogin ? `<input id="authRef" placeholder="Code parrain (optionnel)">` : ''}
+    <input id="authUser" placeholder="Pseudo (lettres/chiffres, 3-20 car.)" autocomplete="username">
+    <input id="authPass" type="password" placeholder="Mot de passe (6 car. min)" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
     <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">
       ${isLogin ? 'Se connecter' : 'Créer mon compte'}
     </button>
@@ -208,10 +162,15 @@ async function fAuth(){
 window.loginUser = async () => {
   const pseudo = $('#authUser').value.trim().toLowerCase();
   const pass = $('#authPass').value;
-  const refCode = $('#authRef')?.value.trim() || '';
   const btn = $('#btnLogin');
   
-  if(!pseudo || pass.length < 6) { authMsg = { type: 'error', text: 'Pseudo et mot de passe (6 car. min) requis' }; draw(); return; }
+  if(!pseudo.match(/^[a-z0-9_]{3,20}$/)) { 
+    authMsg = { type: 'error', text: 'Pseudo invalide (3-20 car., pas d\'espaces)' }; draw(); return; 
+  }
+  if(pseudo === 'admin' || pseudo === 'support') {
+    authMsg = { type: 'error', text: 'Ce pseudo est réservé.' }; draw(); return;
+  }
+  if(pass.length < 6) { authMsg = { type: 'error', text: 'Mot de passe trop court (6 car. min)' }; draw(); return; }
   
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Chargement...'; authMsg = { type: '', text: '' };
   const email = `${pseudo}@mbolo.app`;
@@ -221,19 +180,15 @@ window.loginUser = async () => {
     if(!isLogin) {
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { name: pseudo, bal: 0, joined: Date.now(), refCode: refCode });
-      if(refCode) {
-        const allUsers = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
-        if(allUsers.exists()) {
-          const users = allUsers.val();
-          const parrainId = Object.keys(users).find(k => k === refCode);
-          if(parrainId) {
-            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + parrainId), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
-            await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
-          }
-        }
-      }
-      authMsg = { type: 'success', text: 'Compte créé avec succès !' };
+      
+      const code = R(6);
+      
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { 
+        name: pseudo, code: code, bal: 0, joined: Date.now() 
+      });
+      await window.FB.set(window.FB.ref(window.FB.db, 'ids/' + code), uid);
+      
+      authMsg = { type: 'success', text: 'Compte créé ! Ton code : ' + code };
     } else {
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
     }
@@ -242,7 +197,6 @@ window.loginUser = async () => {
     let errMsg = 'Une erreur est survenue.';
     if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris.';
     else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
-    else if (error.code === 'auth/weak-password') errMsg = '❌ Mot de passe trop faible.';
     authMsg = { type: 'error', text: errMsg }; draw();
   }
 };
@@ -251,47 +205,44 @@ window.loginUser = async () => {
 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
+    
+    // Vérification du statut Admin via le nœud "admins"
+    const adminSnap = await window.FB.get(window.FB.ref(window.FB.db, 'admins/' + user.uid));
+    S.isAdmin = adminSnap.exists() && adminSnap.val() === true;
+
     const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + user.uid));
     if(snap.exists()) {
       const data = snap.val();
-      S.me = { id: user.uid.substring(0,6).toUpperCase(), name: data.name };
-      S.bal = data.bal || 0;
-    } else {
-      const fallbackName = user.email.split('@')[0];
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + user.uid), { name: fallbackName, bal: 0, joined: Date.now() });
-      S.me = { id: user.uid.substring(0,6).toUpperCase(), name: fallbackName };
-      S.bal = 0;
+      S.me = { name: data.name };
+      S.code = data.code;
+      
+      window.FB.onValue(window.FB.ref(window.FB.db, 'users/' + user.uid + '/bal'), (balSnap) => {
+        S.bal = balSnap.val() || 0;
+        $('#bl').textContent = kc(S.bal);
+        save();
+        if(tab === 'w') draw();
+      });
+
     }
-    S.posts = []; S.mk = [];
+    
+    S.posts = []; S.mk = []; S.directory = [];
     save(); draw();
     ecouterPosts(); ecouterMarche(); ecouterAnnuaire();
+
+    if(S.isAdmin) attachAdminListeners();
+
   } else {
-    S.me = null; S.uid = null; S.posts = []; S.mk = []; save(); draw();
+    S.me = null; S.uid = null; S.code = null; S.isAdmin = false;
+    S.posts = []; S.mk = []; S.directory = []; save(); draw();
   }
 });
-
-// --- TRANSFERT SÉCURISÉ ---
-async function transferKC(toUid, amountKc, reason) {
-  if(!S.uid) return false;
-  if(S.bal < amountKc) { toast('Solde insuffisant'); return false; }
-  const amountToSend = Math.round(amountKc);
-  try {
-    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid), (curr) => { if (curr && curr.bal >= amountToSend) curr.bal -= amountToSend; return curr; });
-    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + toUid), (curr) => { if (curr) { curr.bal = (curr.bal || 0) + amountToSend; } return curr; });
-    window.FB.push(window.FB.ref(window.FB.db, 'transactions'), { from: S.uid, to: toUid, amount: amountToSend, reason: reason, ts: Date.now() });
-    S.led.unshift({ts:Date.now(), m:'Envoi ('+reason+')', d:-amountToSend}); save(); return true;
-  } catch(e) { toast('Erreur réseau'); return false; }
-}
-
-window.tip = async (authorUid, authorName, amount) => {
-  if(await transferKC(authorUid, amount, 'Pourboire')) { toast('Merci envoyé à ' + authorName + ' 🙏'); draw(); }
-}
 
 async function draw(){
   try {
     nav(); const v=$('#v');
     if(!S.me){ v.innerHTML = await fAuth(); return; }
     v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,contact:fContact,adm:fAdm}[tab])();
+    if(tab === 'adm' && S.isAdmin) attachAdminListeners();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Erreur</h3>
@@ -317,8 +268,8 @@ async function fFeed(){
     </div>`;
 
   const postForm = `<div class="k">
-    <textarea id="px" rows="2" placeholder="Partage une info..."></textarea>
-    <input type="file" id="pimg" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:5px">
+    <textarea id="px" rows="2" placeholder="Partage une info..." maxlength="1000"></textarea>
+    <input type="file" id="pimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
     <select id="pcat" style="margin-bottom:8px">
       <option value="gen">Discussion Générale</option>
       <option value="edu">📚 Éducation / Cours</option>
@@ -329,20 +280,8 @@ async function fFeed(){
 
   const postList = P.map(p=>{
     let badge = p.cat === 'edu' ? '<span class="badge-edu">📚 Éducation</span>' : (p.cat === 'com' ? '<span class="badge-com">🛍️ Commerce</span>' : '');
-    
-    // Affichage de la miniature
-    let thumbHtml = '';
-    if (p.thumb) {
-      thumbHtml = `<img src="${p.thumb}" class="post-thumb" alt="Miniature">`;
-    } else if (p.isPdf) {
-      thumbHtml = `<div class="pdf-thumb"><span style="font-size:40px">📄</span> <span style="margin-left:10px;font-weight:bold">Document PDF</span></div>`;
-    }
-
-    // Bouton de téléchargement
-    let dlBtn = '';
-    if (p.fileUrl) {
-      dlBtn = `<a href="${p.fileUrl}" target="_blank" download class="dl-btn">📥 Télécharger le fichier original</a>`;
-    }
+    let thumbHtml = p.thumb ? `<img src="${p.thumb}" class="post-thumb">` : '';
+    let delBtn = p.a === S.uid ? `<button class="s" onclick="deletePost('${p.id}')" style="margin-top:8px;color:var(--danger)">🗑️ Supprimer</button>` : '';
 
     return `<div class="k">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
@@ -350,12 +289,7 @@ async function fFeed(){
       </div>
       <div class="post-content">${esc(p.x)}</div>
       ${thumbHtml}
-      ${dlBtn}
-      ${p.a==S.uid?'':`<div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
-          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
-          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
-          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',100)">👑 10 KC</button>
-        </div>`}
+      ${delBtn}
     </div>`;
   }).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication.</p>';
 
@@ -366,36 +300,41 @@ window.publierFirebase = async () => {
   const texte = $('#px').value.trim();
   const cat = $('#pcat').value;
   const file = $('#pimg').files[0];
-  if (!texte && !file) return toast('Écris un texte ou ajoute un fichier');
+  if (!texte && !file) return toast('Écris un texte ou ajoute une image');
+  if (texte.length > 1000) return toast('Texte trop long (1000 car. max)');
 
-  let thumb = null, fileUrl = null, isPdf = false;
-  
-  if (file) {
-    isPdf = file.type === 'application/pdf';
-    thumb = await generateThumbnail(file); // Miniature (ou null si PDF)
-    const uploadRes = await uploadFile(file, false); // Pas chiffré pour le fil public
-    fileUrl = uploadRes.url;
-  }
+  let thumb = null;
+  if (file) thumb = await generateThumbnail(file);
 
-  const postData = { 
-    a: S.uid, n: S.me.name, x: texte, cat: cat, 
-    thumb: thumb, fileUrl: fileUrl, isPdf: isPdf, ts: Date.now() 
-  };
+  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, thumb: thumb, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
     $('#px').value = ''; $('#pimg').value = ''; toast('Publié !');
   } catch (e) { toast('Erreur réseau'); }
 };
 
+window.deletePost = async (id) => {
+  if(!confirm("Supprimer cette publication ?")) return;
+  try {
+    await window.FB.set(window.FB.ref(window.FB.db, 'posts/' + id), null);
+    toast('Supprimé');
+  } catch(e) { toast('Erreur'); }
+}
+
 function ecouterPosts() {
   if (!window.FB) return;
-  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
-    const p = snapshot.val(); if (!p) return;
-    if (!S.posts) S.posts = [];
-    if (!S.posts.find(x => x.ts === p.ts)) {
-      S.posts.push({ id: snapshot.key, ...p });
-      if (tab === 'feed') draw(); 
+  const q = window.FB.query(window.FB.ref(window.FB.db, 'posts'), window.FB.limitToLast(30));
+  window.FB.onValue(q, (snapshot) => {
+    const data = snapshot.val();
+    S.posts = [];
+    if(data) {
+      Object.keys(data).forEach(key => {
+        const p = data[key];
+        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', thumb: p.thumb, ts: p.ts });
+      });
     }
+    save();
+    if (tab === 'feed') draw(); 
   });
 }
 
@@ -406,21 +345,19 @@ async function fMk(){
   const M = [...(S.mk||[])].filter(m => m && m.ts).sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
     <h3>Mettre en vente</h3>
-    <input id="mt" placeholder="Nom du produit">
+    <input id="mt" placeholder="Nom du produit" maxlength="60">
     <input id="mp" type="number" step="1" placeholder="Prix en KC">
-    <textarea id="md" rows="2" placeholder="Description..."></textarea>
-    <input type="file" id="mimg" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:5px">
+    <textarea id="md" rows="2" placeholder="Description..." maxlength="500"></textarea>
+    <input type="file" id="mimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
     <button onclick="sell()" style="width:100%">Publier l'annonce</button>
   </div>` +
   (M.map(l=>{
-    let thumbHtml = l.thumb ? `<img src="${l.thumb}" class="post-thumb">` : (l.isPdf ? `<div class="pdf-thumb"><span style="font-size:30px">📄</span> Document</div>` : '');
-    let dlBtn = l.fileUrl ? `<a href="${l.fileUrl}" target="_blank" class="dl-btn">📥 Voir / Télécharger</a>` : '';
+    let thumbHtml = l.thumb ? `<img src="${l.thumb}" class="post-thumb">` : '';
     return `<div class="k">
       <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
       <small>Vendeur : ${esc(l.n)}</small>
       <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
       ${thumbHtml}
-      ${dlBtn}
       ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
     </div>`;
   }).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
@@ -429,50 +366,50 @@ async function fMk(){
 window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim(), file=$('#mimg').files[0];
   if(!t || !p || p<=0) return toast('Titre et prix requis');
+  if(t.length < 3) return toast('Titre trop court');
   
-  let thumb = null, fileUrl = null, isPdf = false;
-  if (file) {
-    isPdf = file.type === 'application/pdf';
-    thumb = await generateThumbnail(file);
-    const uploadRes = await uploadFile(file, false);
-    fileUrl = uploadRes.url;
-  }
+  let thumb = null;
+  if (file) thumb = await generateThumbnail(file);
 
   const d = Math.round(p*10); 
-  const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, thumb, fileUrl, isPdf, ts: Date.now() };
+  const item = { a: S.uid, n: S.me.name, t, d, x, thumb, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
-    S.mk.push(item); save(); draw(); toast('Annonce publiée !');
+    save(); draw(); toast('Annonce publiée !');
   } catch(e) { toast('Erreur réseau'); }
 }
 
 function ecouterMarche() {
   if (!window.FB) return;
-  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
-    const l = snapshot.val(); if (!l) return;
-    if (!S.mk) S.mk = [];
-    if (!S.mk.find(m => m.ts === l.ts)) { S.mk.push({ id: snapshot.key, ...l }); if (tab === 'mk') draw(); }
+  const q = window.FB.query(window.FB.ref(window.FB.db, 'marketplace'), window.FB.limitToLast(30));
+  window.FB.onValue(q, (snapshot) => {
+    const data = snapshot.val();
+    S.mk = [];
+    if(data) {
+      Object.keys(data).forEach(key => { S.mk.push({ id: key, ...data[key] }); });
+    }
+    save();
+    if (tab === 'mk') draw(); 
   });
 }
 
 window.buy = async (id, sellerUid, title, price) => {
-  if(confirm(`Acheter "${title}" pour ${kc(price)} ?`)) {
-    const commission = Math.round(price * COMMISSION_RATE);
-    const amountForSeller = price - commission;
-    if(S.bal < price) return toast('Solde insuffisant');
-    if(await transferKC(sellerUid, amountForSeller, 'Achat: '+title)) {
-      const adminUsers = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
-      if(adminUsers.exists()) {
-        const adminId = Object.keys(adminUsers.val()).find(k => adminUsers.val()[k].name === 'admin');
-        if(adminId) await transferKC(adminId, commission, 'Commission');
-      }
-      toast('Achat effectué !');
-    }
+  if(confirm(`Acheter "${title}" pour ${kc(price)} ?\nUne demande sera envoyée à l'admin.`)) {
+    try {
+      // On récupère le code du vendeur pour le mettre dans la demande
+      const sellerSnap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + sellerUid + '/code'));
+      const sellerCode = sellerSnap.val();
+      
+      window.FB.push(window.FB.ref(window.FB.db, 'transfer_requests'), {
+        t: 'wd', f: S.uid, fn: S.me.name, to: sellerCode, a: price, m: 'Achat: '+title, s: 'p', ts: Date.now()
+      });
+      toast('Demande d\'achat envoyée à l\'admin !');
+    } catch(e) { toast('Erreur réseau'); }
   }
 }
 
 // ==========================================
-// 3. TUNNELS (AVEC FICHIERS CHIFFRÉS)
+// 3. TUNNELS
 // ==========================================
 async function fTun(){
   if(openT) return chat();
@@ -491,7 +428,7 @@ async function fTun(){
   </div>
   <div class="k">
     <h3>🔑 Rejoindre un tunnel</h3>
-    <input id="ti" placeholder="ID du tunnel">
+    <input id="ti" placeholder="ID du tunnel (ex: CLS-AB12)">
     <input id="tq" type="password" placeholder="Clé secrète">
     <button onclick="joinT()" style="width:100%">Rejoindre</button>
   </div>
@@ -509,7 +446,7 @@ window.mkT = async (type) => {
   const n = $(`#tn_${type}`).value.trim(), p = $(`#tp_${type}`).value;
   if(!n || !p) return toast('Nom et clé requis');
   const i = (isEdu ? 'CLS-' : 'BQT-') + R(4);
-  S.tun[i] = { n: n, type: type, owner: S.uid }; 
+  S.tun[i] = { n: n, type: type }; 
   TK[i] = await tk(i, p); save(); toast('Créé ! ID : ' + i); op(i);
 }
 
@@ -534,23 +471,13 @@ window.op = async (i) => {
 async function chat(){
   const i=openT, M=[], tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
   for(const m of S.msgs.filter(x=>x.i==i).sort((a,b)=>a.ts-b.ts)){
-    if (m.fileUrl) {
-      M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
-        <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
-        <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
-          <div>📄 Fichier sécurisé</div>
-          <a href="${m.fileUrl}" target="_blank" class="dl-btn" style="padding:8px;font-size:12px;margin-top:5px;background:#fff;color:#000">📥 Télécharger (Chiffré)</a>
-        </div>
-      </div>`);
-    } else {
-      const t = await dec(TK[i], m.c);
-      M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
-        <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
-        <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
-          ${t==null?'<i class="m">🔒 Clé incorrecte</i>':esc(t)}
-        </div>
-      </div>`);
-    }
+    const t = await dec(TK[i], m.c);
+    M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
+      <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
+      <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
+        ${t==null?'<i class="m">🔒 Clé incorrecte</i>':esc(t)}
+      </div>
+    </div>`);
   }
   const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}.`);
   return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
@@ -558,49 +485,30 @@ async function chat(){
       <button class="s" onclick="go('tun')">← Retour</button><b style="align-self:center">${esc(tunnelData.n)}</b><div></div>
     </div>
     <a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>
-    
     <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation.</p>'}</div>
-    
-    <div style="margin-top:10px;background:var(--bg);padding:10px;border-radius:10px;border:1px solid var(--l)">
-      <input type="file" id="tfile" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:8px">
-      <div style="display:flex;gap:8px">
-        <input id="cm" placeholder="Message..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
-        <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
-      </div>
+    <div style="display:flex;margin-top:10px;gap:8px">
+      <input id="cm" placeholder="Message..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
+      <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
     </div>
   </div>`;
 }
 
 window.snd = async () => {
-  const t=$('#cm').value.trim(); 
-  const file = $('#tfile').files[0];
-  if(!t && !file) return;
-
-  if (file) {
-    // Si c'est un fichier, on le chiffre !
-    const uploadRes = await uploadFile(file, true);
-    if(uploadRes.url) {
-      const m = { ts: Date.now(), n: S.me.name, fileUrl: uploadRes.url };
-      window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
-      if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
-    }
-    $('#tfile').value = '';
-  } else {
-    // Texte normal
-    const c = await enc(TK[openT], t);
-    const m = { ts: Date.now(), n: S.me.name, c };
-    window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
-    $('#cm').value='';
-    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
-  }
+  const t=$('#cm').value.trim(); if(!t)return;
+  if(t.length > 4000) return toast('Message trop long');
+  const c = await enc(TK[openT], t);
+  const m = { ts: Date.now(), n: S.me.name, c };
+  window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
+  $('#cm').value='';
+  if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
   setTimeout(()=>{const cb=$('#chat-box'); if(cb)cb.scrollTop=cb.scrollHeight;},100);
 }
 
 // ==========================================
-// 4. WALLET
+// 4. WALLET (DEMANDES)
 // ==========================================
 async function fW(){
-  const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon ID est : ${S.me.id}. Montant FCFA envoyé : `)}`;
+  const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon Code est : ${S.code}. Montant FCFA envoyé : `)}`;
   return `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
     <h2 style="margin:0;font-size:36px">${kc(S.bal)}</h2>
     <small style="color:rgba(255,255,255,0.8)">≈ ${fc(S.bal)}</small>
@@ -609,120 +517,198 @@ async function fW(){
     <h3>🛒 Acheter des KC</h3>
     <p class="m" style="margin-bottom:10px">1 KC = 100 FCFA. Envoyez par Airtel Money au <b>${AIRTEL_NUMBER}</b>, puis cliquez sur WhatsApp.</p>
     <a href="${buyLink}" target="_blank" style="text-decoration:none"><button class="wa">💬 Envoyer la demande (WhatsApp)</button></a>
+    
+    <div style="margin-top:15px;border-top:1px solid var(--l);padding-top:10px">
+      <p class="m">Déjà envoyé ? Déclare ton montant ici :</p>
+      <input id="reqAmt" type="number" step="10" placeholder="Montant FCFA (multiple de 10)">
+      <button class="s" onclick="requestRecharge()" style="width:100%">Déclarer la recharge</button>
+    </div>
   </div>
   <div class="k">
-    <h3>Envoyer des KC</h3>
-    <input id="wt" placeholder="ID destinataire (ex: ABCD12)">
+    <h3>Demander un transfert</h3>
+    <input id="wt" placeholder="Code à 6 caractères (ex: A1B2C3)">
     <input id="wd" type="number" step="0.1" placeholder="Montant en KC">
-    <button onclick="sendUser()" style="width:100%">Envoyer</button>
+    <button onclick="requestTransfer()" style="width:100%">Demander le transfert</button>
   </div>
   <div class="k">
-    <h3>Mon ID Mbolo (Parrainage)</h3>
-    <p class="m" style="margin-bottom:5px">Partage ton code pour gagner des KC :</p>
-    <textarea readonly rows="1" onclick="this.select()" style="font-size:14px;text-align:center;font-weight:bold">${S.uid}</textarea>
-    <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.uid}');toast('Copié')" style="width:100%">Copier mon code</button>
-  </div>
-  <div class="k">
-    <h3>Historique local</h3>
-    ${(S.led||[]).filter(l=>l && l.ts).map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
-      <small>${ago(l.ts)}<br>${esc(l.m)}</small> <b class="${l.d>0?'p':'n'}" style="align-self:center">${l.d>0?'+':''}${kc(l.d)}</b>
-    </div>`).join('') || '<small class="m">Aucun mouvement.</small>'}
+    <h3>Mon Code Mbolo</h3>
+    <textarea readonly rows="1" onclick="this.select()" style="font-size:14px;text-align:center;font-weight:bold">${S.code}</textarea>
+    <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.code}');toast('Copié')" style="width:100%">Copier mon code</button>
   </div>
   <button class="danger" onclick="window.FB.signOut(window.FB.auth)" style="width:100%;margin-top:20px">Se déconnecter</button>`;
 }
 
-window.sendUser = async () => {
+window.requestRecharge = async () => {
+  const amt = parseInt($('#reqAmt').value);
+  if(!amt || amt < 500) return toast('Montant minimum 500 FCFA');
+  if(amt % 10 !== 0) return toast('Le montant doit être un multiple de 10');
+  const amountKC = amt / 10;
+  
+  try {
+    window.FB.push(window.FB.ref(window.FB.db, 'recharges'), {
+      uid: S.uid, name: S.me.name, amountFCFA: amt, amountKC: amountKC, status: 'pending', ts: Date.now()
+    });
+    toast('Demande envoyée ! L\'admin va vérifier.');
+    $('#reqAmt').value = '';
+  } catch(e) { toast('Erreur réseau'); }
+}
+
+window.requestTransfer = async () => {
   const to=$('#wt').value.trim().toUpperCase(), d=Math.round(parseFloat($('#wd').value)*10);
-  if(!to || !d || d<=0) return toast('ID et montant valides requis');
-  if(to === S.me.id) return toast('Tu ne peux pas t\'envoyer des KC');
-  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
-  let targetUid = null;
-  if(snap.exists()){
-    const users = snap.val();
-    targetUid = Object.keys(users).find(k => k.substring(0,6).toUpperCase() === to);
-  }
-  if(!targetUid) return toast('Destinataire introuvable');
-  if(await transferKC(targetUid, d, 'Transfert privé')){ toast('Envoi réussi !'); draw(); }
+  if(!to.match(/^[A-Z0-9]{6}$/)) return toast('Code destinataire invalide (6 caractères)');
+  if(!d || d<=0) return toast('Montant invalide');
+  if(to === S.code) return toast('Tu ne peux pas t\'envoyer des KC');
+  if(d > S.bal) return toast('Tu n\'as pas assez de KC');
+  
+  const targetSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + to));
+  if(!targetSnap.exists()) return toast('Destinataire introuvable');
+  
+  try {
+    window.FB.push(window.FB.ref(window.FB.db, 'transfer_requests'), {
+      t: 'tr', f: S.uid, fn: S.me.name, to: to, a: d, m: 'Transfert privé', s: 'p', ts: Date.now()
+    });
+    toast('Demande de transfert envoyée à l\'admin !');
+    $('#wt').value = ''; $('#wd').value = '';
+  } catch(e) { toast('Erreur réseau'); }
 }
 
 // ==========================================
 // 5. CONTACT / ANNUAIRE
 // ==========================================
+let directoryFilter = 'all';
+
 async function fContact(){
-  const D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
+  let D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
+  if(directoryFilter === 'edu') D = D.filter(c => c.cat === 'edu');
+  if(directoryFilter === 'com') D = D.filter(c => c.cat === 'com');
+
+  const filterHTML = `<div class="filters">
+      <button class="${directoryFilter==='all'?'on':'s'}" onclick="directoryFilter='all';draw()">Tout</button>
+      <button class="${directoryFilter==='edu'?'on':'s'}" onclick="directoryFilter='edu';draw()">📚 Profs</button>
+      <button class="${directoryFilter==='com'?'on':'s'}" onclick="directoryFilter='com';draw()">🛍️ Commerçants</button>
+    </div>`;
+
   const registerForm = `<div class="k">
-    <h3>📇 S'enregistrer</h3>
-    <input id="dn" placeholder="Nom / Boutique">
+    <h3>📇 Ma Carte de visite</h3>
+    <input id="dn" placeholder="Nom / Boutique" maxlength="40">
     <select id="dcat"><option value="edu">📚 Enseignant</option><option value="com">🛍️ Commerçant</option></select>
-    <input id="dqu" placeholder="Quartier / Ville">
-    <input id="dwa" type="tel" placeholder="Numéro WhatsApp">
+    <input id="dqu" placeholder="Quartier / Ville" maxlength="40">
+    <input id="dwa" type="tel" placeholder="Numéro WhatsApp (chiffres uniquement)">
     <button onclick="registerDir()" style="width:100%">Publier ma carte</button>
   </div>`;
+
   const contactList = D.map(c => {
     let badge = c.cat === 'edu' ? '<span class="badge-edu">📚 Prof</span>' : '<span class="badge-com">🛍️ Commerce</span>';
     let cleanWa = c.wa ? c.wa.replace(/\D/g,'') : '';
     let waBtn = cleanWa ? `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 WhatsApp</button></a>` : '';
     return `<div class="k"><b>${esc(c.n)}</b> ${badge}<br><small>📍 ${esc(c.qu)}</small>${waBtn}</div>`;
   }).join('') || '<p class="m" style="text-align:center">Annuaire vide.</p>';
-  return registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire</h3>` + contactList;
+  
+  return filterHTML + registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire</h3>` + contactList;
 }
 
 window.registerDir = async () => {
   const n = $('#dn').value.trim(), cat = $('#dcat').value, qu = $('#dqu').value.trim(), wa = $('#dwa').value.trim();
-  if(!n || !wa) return toast('Nom et WhatsApp requis');
-  const item = { a: S.uid, n: n, cat: cat, qu: qu, wa: wa, ts: Date.now() };
+  const cleanWa = wa.replace(/\D/g,'');
+  if(!n || !cleanWa) return toast('Nom et WhatsApp requis');
+  if(cleanWa.length < 8 || cleanWa.length > 15) return toast('Numéro invalide');
+  
+  const item = { n: n, cat: cat, qu: qu, wa: cleanWa, ts: Date.now() };
+  
   try {
-    window.FB.push(window.FB.ref(window.FB.db, 'directory'), item);
-    S.directory.push(item); save(); draw(); toast('Inscrit !');
+    await window.FB.set(window.FB.ref(window.FB.db, 'directory/' + S.uid), item);
+    toast('Carte publiée / mise à jour !');
   } catch(e) { toast('Erreur réseau'); }
 }
 
 function ecouterAnnuaire() {
   if (!window.FB) return;
-  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'directory'), (snapshot) => {
-    const item = snapshot.val(); if (!item) return;
-    if (!S.directory) S.directory = [];
-    if (!S.directory.find(d => d.ts === item.ts)) { S.directory.push(item); if (tab === 'contact') draw(); }
+  window.FB.onValue(window.FB.ref(window.FB.db, 'directory'), (snapshot) => {
+    const data = snapshot.val();
+    S.directory = [];
+    if(data) {
+      Object.keys(data).forEach(key => { S.directory.push(data[key]); });
+    }
+    save();
+    if (tab === 'contact') draw();
   });
 }
 
 // ==========================================
-// 6. ADMIN
+// 6. ADMIN (DASHBOARD)
 // ==========================================
-async function fAdm(){
-  if(S.me.name !== 'admin') return '<div class="k"><h3>Accès refusé</h3></div>';
-  return `<div class="k"><h3>🛡️ Dashboard Admin</h3><div id="admin-recharges"><p class="m">Chargement...</p></div></div>`;
-}
+let isAdminListenerAttached = false;
 
-async function loadAdminRecharges() {
-  if(!window.FB) return;
+function attachAdminListeners() {
+  if(isAdminListenerAttached || !S.isAdmin) return;
+  isAdminListenerAttached = true;
+
   window.FB.onValue(window.FB.ref(window.FB.db, 'recharges'), (snap) => {
     const data = snap.val(); const container = $('#admin-recharges');
     if(!container) return;
     if(!data) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    
     const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.status === 'pending');
     if(reqs.length === 0) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    
     container.innerHTML = reqs.map(r => `
-      <div class="k" style="border:1px solid var(--y)">
-        <b>Client : ${esc(r.name)}</b><br><small>ID : ${r.userId.substring(0,6).toUpperCase()}</small><br>
+      <div class="k" style="border:1px solid var(--y);margin-bottom:8px;padding:10px">
+        <b>${esc(r.name)}</b> (Code: ${r.uid.substring(0,6)})<br>
         <small>${r.amountFCFA} FCFA (${r.amountKC/10} KC)</small><br><small>${ago(r.ts)}</small>
-        <div style="margin-top:10px">
-          <button onclick="validateRecharge('${r.key}', '${r.userId}', ${r.amountKC})" style="background:var(--g)">✅ Valider</button>
+        <div style="margin-top:8px">
+          <button onclick="validateRecharge('${r.key}', '${r.uid}', ${r.amountKC}, this)" style="background:var(--g)">✅ Valider</button>
           <button onclick="rejectRecharge('${r.key}')" class="danger">❌ Refuser</button>
         </div>
       </div>
     `).join('');
   });
+
+  window.FB.onValue(window.FB.ref(window.FB.db, 'transfer_requests'), (snap) => {
+    const data = snap.val(); const container = $('#admin-transfers');
+    if(!container) return;
+    if(!data) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    
+    const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.s === 'p');
+    if(reqs.length === 0) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    
+    container.innerHTML = reqs.map(r => {
+      let txt = r.t === 'wd' ? `Achat : ${r.fn} envoie ${r.a/10} KC pour "${r.m}"` : `Transfert : ${r.fn} envoie ${r.a/10} KC au code ${r.to}`;
+      return `
+      <div class="k" style="border:1px solid #0d47a1;margin-bottom:8px;padding:10px">
+        <b>${txt}</b><br>
+        <small>${ago(r.ts)}</small>
+        <div style="margin-top:8px">
+          <button onclick="validateTransfer('${r.key}', '${r.f}', '${r.to}', ${r.a}, '${r.t}', this)" style="background:var(--g)">✅ Valider</button>
+          <button onclick="rejectTransfer('${r.key}')" class="danger">❌ Refuser</button>
+        </div>
+      </div>`;
+    }).join('');
+  });
 }
 
-window.validateRecharge = async (reqKey, userId, amountKC) => {
+async function fAdm(){
+  if(!S.isAdmin) return '<div class="k"><h3>Accès refusé</h3></div>';
+  return `<div class="k">
+    <h3>🛡️ Demandes de Recharge</h3>
+    <div id="admin-recharges"><p class="m">Chargement...</p></div>
+  </div>
+  <div class="k">
+    <h3>🔄 Demandes de Transfert / Achat</h3>
+    <div id="admin-transfers"><p class="m">Chargement...</p></div>
+  </div>`;
+}
+
+window.validateRecharge = async (reqKey, userId, amountKC, btn) => {
   if(!confirm(`Créditer ${amountKC/10} KC ?`)) return;
-  await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + userId), (curr) => {
-    if(curr) curr.bal = (curr.bal || 0) + amountKC;
-    return curr;
-  });
-  await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'validated' });
-  toast('Recharge validée !');
+  btn.disabled = true; btn.textContent = '...';
+  
+  try {
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + userId + '/bal'), (curr) => {
+      return (curr || 0) + amountKC;
+    });
+    await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'validated' });
+    toast('Recharge validée !');
+  } catch(e) { toast('Erreur'); btn.disabled = false; }
 }
 
 window.rejectRecharge = async (reqKey) => {
@@ -730,18 +716,53 @@ window.rejectRecharge = async (reqKey) => {
   toast('Refusé.');
 }
 
-const originalDraw = draw;
-window.draw = async function() {
-  await originalDraw();
-  if(tab === 'adm') loadAdminRecharges();
+window.validateTransfer = async (reqKey, senderId, receiverCode, amount, type, btn) => {
+  if(!confirm(`Effectuer l'opération de ${amount/10} KC ?`)) return;
+  btn.disabled = true; btn.textContent = '...';
+  
+  try {
+    let receiverId = null;
+    if (receiverCode) {
+      const receiverIdSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + receiverCode));
+      if(receiverIdSnap.exists()) receiverId = receiverIdSnap.val();
+    }
+
+    // 1. Vérifier le solde de l'expéditeur
+    const senderBal = (await window.FB.get(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'))).val() || 0;
+    if (senderBal < amount) { toast('L\'expéditeur n\'a pas assez de KC !'); btn.disabled = false; return; }
+
+    if (type === 'wd') {
+      // Achat sur le marché : on prend une commission de 3%
+      const commission = Math.round(amount * 0.03);
+      const amountForSeller = amount - commission;
+
+      // Débiter l'acheteur
+      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
+      // Créditer le vendeur
+      if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amountForSeller);
+      // Créditer l'admin (commission)
+      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'), (curr) => (curr || 0) + commission);
+
+    } else {
+      // Transfert simple
+      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
+      if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amount);
+    }
+    
+    await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'ok' });
+    toast('Transfert validé !');
+  } catch(e) { toast('Erreur : ' + e.message); btn.disabled = false; }
+}
+
+window.rejectTransfer = async (reqKey) => {
+  await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'no' });
+  toast('Refusé.');
 }
 
 // ==========================================
 // LANCEMENT
 // ==========================================
 draw();
-setTimeout(() => { ecouterPosts(); ecouterMarche(); ecouterAnnuaire(); }, 1000);
-
 </script>
 
 <!-- SERVICE WORKER -->
