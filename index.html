@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V8 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V8.1 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -55,7 +55,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 @media(prefers-color-scheme:dark){.badge-edu{background:#0d47a1;color:#e3f2fd}.badge-com{background:#1b5e20;color:#e8f5e9}}
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
 .post-content{margin:10px 0;font-size:15px;line-height:1.5}
-.post-image{width:100%;border-radius:10px;margin-top:8px;max-height:400px;object-fit:cover}
+.post-image{width:100%;border-radius:10px;margin-top:8px;max-height:400px;object-fit:cover;display:block}
 .file-link{display:flex;align-items:center;background:var(--bg);padding:12px;border-radius:10px;margin-top:8px;text-decoration:none;color:var(--t);border:1px solid var(--l);font-weight:bold}
 .file-link:hover{background:var(--l)}
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
@@ -69,7 +69,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V8</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V8.1</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -111,14 +111,16 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// Fonction d'affichage intelligente (Image ou PDF)
-function renderAttachment(url) {
+// Fonction d'affichage intelligente (Corrigée pour les images)
+function renderAttachment(url, type) {
   if (!url) return '';
-  const lowUrl = url.toLowerCase();
-  if (lowUrl.endsWith('.pdf')) {
+  const isPdf = (type && type.includes('pdf')) || url.toLowerCase().endsWith('.pdf');
+  const isImg = (type && type.startsWith('image/')) || url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
+  if (isPdf) {
     return `<a href="${url}" target="_blank" class="file-link">📄 Télécharger le document PDF</a>`;
-  } else if (lowUrl.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-    return `<img src="${url}" class="post-image">`;
+  } else if (isImg) {
+    return `<img src="${url}" class="post-image" alt="Image">`;
   } else {
     return `<a href="${url}" target="_blank" class="file-link">📎 Télécharger le fichier</a>`;
   }
@@ -157,7 +159,7 @@ async function fAuth(){
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V8</h2>
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V8.1</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
@@ -219,7 +221,7 @@ window.loginUser = async () => {
   }
 };
 
-// --- SYNCHRONISATION (Efface les vieux messages locaux) ---
+// --- SYNCHRONISATION ---
 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
@@ -234,12 +236,10 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       S.me = { id: user.uid.substring(0,6).toUpperCase(), name: fallbackName };
       S.bal = 0;
     }
-    // NETTOYAGE : On vide les posts locaux pour être sûr d'avoir les vrais de Firebase
     S.posts = []; 
     S.mk = [];
     save(); 
     draw();
-    // On lance l'écoute
     ecouterPosts();
     ecouterMarche();
     ecouterAnnuaire();
@@ -280,7 +280,7 @@ async function draw(){
 }
 
 // ==========================================
-// 1. FIL D'ACTUALITÉ (PDF SUPPORTÉS)
+// 1. FIL D'ACTUALITÉ
 // ==========================================
 async function fFeed(){
   let P=[...(S.posts||[])].filter(p => p && p.ts);
@@ -312,7 +312,7 @@ async function fFeed(){
         <div><b>${esc(p.n)}</b> ${badge}</div><small>${ago(p.ts)}</small>
       </div>
       <div class="post-content">${esc(p.x)}</div>
-      ${renderAttachment(p.img)}
+      ${renderAttachment(p.img, p.ftype)}
       ${p.a==S.uid?'':`<div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
@@ -330,15 +330,15 @@ window.publierFirebase = async () => {
   const file = $('#pimg').files[0];
   if (!texte && !file) return toast('Écris un texte ou ajoute un fichier');
   let imgUrl = null;
-  if(file) imgUrl = await uploadFile(file);
-  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, img: imgUrl, ts: Date.now() };
+  let ftype = null;
+  if(file) { imgUrl = await uploadFile(file); ftype = file.type; }
+  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, img: imgUrl, ftype: ftype, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
     $('#px').value = ''; $('#pimg').value = ''; toast('Publié !');
   } catch (e) { toast('Erreur réseau'); }
 };
 
-// ON REMPLACE ONCHILDADDED PAR ONVALUE POUR AVOIR LA LISTE EXACTE
 function ecouterPosts() {
   if (!window.FB) return;
   window.FB.onValue(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
@@ -347,7 +347,7 @@ function ecouterPosts() {
     if(data) {
       Object.keys(data).forEach(key => {
         const p = data[key];
-        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', img: p.img, ts: p.ts });
+        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', img: p.img, ftype: p.ftype, ts: p.ts });
       });
     }
     save();
@@ -372,7 +372,7 @@ async function fMk(){
     <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
     <small>Vendeur : ${esc(l.n)}</small>
     <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
-    ${renderAttachment(l.img)}
+    ${renderAttachment(l.img, l.ftype)}
     ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
   </div>`).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
 }
@@ -381,9 +381,10 @@ window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim(), file=$('#mimg').files[0];
   if(!t || !p || p<=0) return toast('Titre et prix requis');
   let imgUrl = null;
-  if(file) imgUrl = await uploadFile(file);
+  let ftype = null;
+  if(file) { imgUrl = await uploadFile(file); ftype = file.type; }
   const d = Math.round(p*10); 
-  const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, img: imgUrl, ts: Date.now() };
+  const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, img: imgUrl, ftype: ftype, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
     S.mk.push(item); save(); draw(); toast('Annonce publiée !');
@@ -397,7 +398,8 @@ function ecouterMarche() {
     S.mk = [];
     if(data) {
       Object.keys(data).forEach(key => {
-        S.mk.push(data[key]);
+        const l = data[key];
+        S.mk.push({ id: key, a: l.a, n: l.n, t: l.t, d: l.d, x: l.x, img: l.img, ftype: l.ftype, ts: l.ts });
       });
     }
     save();
