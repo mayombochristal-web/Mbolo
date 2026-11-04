@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V7.1 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V7.2 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -62,9 +62,12 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .msg-error{background:#ffebee;color:#b71c1c;border:1px solid #b71c1c}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
+.auth-tabs{display:flex;border-bottom:2px solid var(--l);margin-bottom:15px}
+.auth-tabs button{flex:1;background:none;color:var(--m);box-shadow:none;border-bottom:3px solid transparent;border-radius:0;margin:0;padding:10px 0;font-size:16px}
+.auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V7.1</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V7.2</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -126,11 +129,15 @@ function nav(){
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
 
-// --- AUTHENTIFICATION AVEC RETOUR VISUEL ---
-let isRegisterMode = false;
+// --- AUTHENTIFICATION (ONGLETS SÉPARÉS) ---
+let authMode = 'login'; // 'login' ou 'register'
 let authMsg = { type: '', text: '' };
 
-function showAuthMsg(type, text) { authMsg = { type, text }; }
+window.switchAuthTab = (mode) => {
+  authMode = mode;
+  authMsg = { type: '', text: '' };
+  draw();
+};
 
 async function fAuth(){
   let msgHtml = '';
@@ -138,37 +145,35 @@ async function fAuth(){
     msgHtml = `<div class="msg-box ${authMsg.type === 'success' ? 'msg-success' : 'msg-error'}">${authMsg.text}</div>`;
   }
   
-  return `<div class="k" style="text-align:center;padding:20px">
-    <h2 style="color:var(--g)">Mbolo V7.1</h2>
-    <p class="m">Connecte-toi pour retrouver ton compte.</p>
+  const isLogin = authMode === 'login';
+
+  return `<div class="k" style="padding:20px">
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V7.2</h2>
     
+    <div class="auth-tabs">
+      <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
+      <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
+    </div>
+
     ${msgHtml}
     
     <input id="authUser" placeholder="Ton pseudo (ex: aldo)" autocomplete="username">
-    <input id="authPass" type="password" placeholder="Ton mot de passe" autocomplete="current-password">
+    <input id="authPass" type="password" placeholder="Ton mot de passe" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
     
-    <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:10px">Se connecter</button>
-    <button class="s" onclick="toggleAuth()" style="width:100%;margin-top:10px" id="btnToggle">Créer un compte</button>
-    
-    <div id="regFields" style="display:none;margin-top:10px;text-align:left">
+    ${!isLogin ? `
       <input id="authRef" placeholder="Code parrain (optionnel)">
       <p class="m" style="font-size:11px">Si tu as été parrainé, met le code de ton ami pour qu'il gagne des KC.</p>
-    </div>
+    ` : ''}
     
-    <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px">
+    <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">
+      ${isLogin ? 'Se connecter' : 'Créer mon compte'}
+    </button>
+    
+    <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px;text-align:center">
       <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici</small>
     </div>
   </div>`;
 }
-
-window.toggleAuth = () => {
-  isRegisterMode = !isRegisterMode;
-  authMsg = { type: '', text: '' }; // Réinitialiser le message
-  $('#regFields').style.display = isRegisterMode ? 'block' : 'none';
-  $('#btnToggle').textContent = isRegisterMode ? 'Déjà un compte ? Se connecter' : 'Créer un compte';
-  $('#btnLogin').textContent = isRegisterMode ? 'Créer mon compte' : 'Se connecter';
-  draw(); // Redessiner pour montrer le changement
-};
 
 window.loginUser = async () => {
   const pseudo = $('#authUser').value.trim().toLowerCase();
@@ -177,19 +182,20 @@ window.loginUser = async () => {
   const btn = $('#btnLogin');
   
   if(!pseudo || pass.length < 6) {
-    showAuthMsg('error', 'Pseudo et mot de passe (6 car. min) requis');
+    authMsg = { type: 'error', text: 'Pseudo et mot de passe (6 car. min) requis' };
     draw(); return;
   }
   
-  // Afficher le spinner et désactiver le bouton
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Chargement...';
+  btn.innerHTML = '<span class="spinner"></span> Connexion en cours...';
   authMsg = { type: '', text: '' };
   
   const email = `${pseudo}@mbolo.app`;
+  const isLogin = authMode === 'login';
 
   try {
-    if(isRegisterMode) {
+    if(!isLogin) {
+      // INSCRIPTION
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
       
@@ -209,30 +215,29 @@ window.loginUser = async () => {
             await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => {
               if(curr) curr.bal = (curr.bal || 0) + 50; return curr;
             });
-            showAuthMsg('success', 'Compte créé ! Bonus de parrainage : +5 KC');
+            authMsg = { type: 'success', text: 'Compte créé ! Bonus de parrainage : +5 KC' };
           }
         }
       }
-      showAuthMsg('success', 'Compte créé avec succès ! Redirection...');
-      // Le onAuthStateChanged va prendre le relais et afficher l'app
+      authMsg = { type: 'success', text: 'Compte créé avec succès ! Redirection...' };
     } else {
+      // CONNEXION
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
-      // Succès : le onAuthStateChanged va rediriger
+      // Le onAuthStateChanged va prendre le relais
     }
   } catch (error) {
-    // En cas d'erreur, on réactive le bouton et on affiche le message
     btn.disabled = false;
-    btn.textContent = isRegisterMode ? 'Créer mon compte' : 'Se connecter';
+    btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
     
     let errMsg = 'Une erreur est survenue.';
-    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris. Essaie un autre.';
-    else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') errMsg = '❌ Pseudo ou mot de passe incorrect.';
+    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris. Change de pseudo ou connecte-toi.';
+    else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
     else if (error.code === 'auth/weak-password') errMsg = '❌ Mot de passe trop faible (6 caractères min).';
     else if (error.code === 'auth/network-request-failed') errMsg = '❌ Problème de connexion internet. Réessaie.';
     else if (error.code === 'auth/too-many-requests') errMsg = '❌ Trop de tentatives. Patiente un instant.';
     
-    showAuthMsg('error', errMsg);
-    draw(); // Redessiner pour montrer le message d'erreur
+    authMsg = { type: 'error', text: errMsg };
+    draw();
   }
 };
 
@@ -244,8 +249,16 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       const data = snap.val();
       S.me = { id: user.uid.substring(0,6).toUpperCase(), name: data.name };
       S.bal = data.bal || 0;
-      save(); draw();
+    } else {
+      // Si le profil manque sur Firebase (bug), on le crée automatiquement
+      const fallbackName = user.email.split('@')[0];
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + user.uid), {
+        name: fallbackName, bal: 0, joined: Date.now()
+      });
+      S.me = { id: user.uid.substring(0,6).toUpperCase(), name: fallbackName };
+      S.bal = 0;
     }
+    save(); draw();
   } else {
     S.me = null; S.uid = null; draw();
   }
