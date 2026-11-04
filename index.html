@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo Tam Tam - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V3 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -35,7 +35,9 @@ input:focus,textarea:focus{border-color:var(--g)}
 button{background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:600;margin:4px 4px 4px 0;cursor:pointer;box-shadow:0 2px 5px rgba(11,107,58,0.3);transition:transform 0.1s}
 button:active{transform:scale(0.97)}
 button.s{background:var(--l);color:var(--t);box-shadow:none}
+button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
+button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none}
 @media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
@@ -45,11 +47,15 @@ nav a{flex:1;text-align:center;padding:12px 0 14px;font-size:12px;color:var(--m)
 nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;font-size:22px;margin-bottom:4px}
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:25px;display:none;z-index:9;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:600;text-align:center}
 .o{background:var(--y);color:#222;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;margin-left:6px}
+.badge-edu{background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
+.badge-com{background:#e8f5e9;color:#1b5e20;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
+@media(prefers-color-scheme:dark){.badge-edu{background:#0d47a1;color:#e3f2fd}.badge-com{background:#1b5e20;color:#e8f5e9}}
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
 .post-content{margin:10px 0;font-size:15px;line-height:1.5}
+.filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 </style></head><body>
 
-<header><b>🥁 Mbolo Tam Tam</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V3</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -65,8 +71,17 @@ S=S||{me:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:nu
 // NETTOYAGE AUTO
 if(S && !S.posts) S.posts = [];
 if(S && !S.mk) S.mk = [];
-if(S && !S.tun) S.tun = {};
 if(S && !S.led) S.led = [];
+
+// MIGRATION: Convertir les anciens tunnels en objets (pour le type et WhatsApp)
+if(S.tun){
+  for(let k in S.tun){
+    if(typeof S.tun[k] === 'string'){
+      S.tun[k] = { n: S.tun[k], type: 'edu', wa: '' }; // Par défaut on met edu pour l'ancien
+    }
+  }
+}
+if(!S.tun) S.tun = {};
 
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
@@ -86,15 +101,15 @@ async function tk(tid,pw){const m=await crypto.subtle.importKey('raw',E.encode(p
 async function enc(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));return b64(iv)+'.'+b64(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,E.encode(t)))}
 async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(a)},k,ub(b)))}catch(e){return null}}
 
-const TK={}; let tab='feed', openT=null;
+const TK={}; let tab='feed', openT=null, feedFilter='all';
 const TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['ex','🔁','Échange']];
 
 function nav(){
-  // J'ai retiré 'adm' ici pour corriger l'erreur
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
 window.go = t => {tab=t;openT=null;draw()};
+window.setFilter = f => {feedFilter=f; draw()};
 
 async function draw(){
   try {
@@ -110,7 +125,6 @@ async function draw(){
         </div>
       </div>`; return;
     }
-    // J'ai retiré 'adm:fAdm' ici pour corriger l'erreur
     v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx}[tab])();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
@@ -136,16 +150,10 @@ window.start = async () => {
   const n=$('#nm').value.trim(); if(!n)return toast('Entre un nom');
   S = {
     me: {id:'M'+R(5), name:n},
-    k: null,
-    bal: 50,
-    led: [{ts:Date.now(), m:'Bonus de bienvenue', d:50}],
+    k: null, bal: 50, led: [{ts:Date.now(), m:'Bonus de bienvenue', d:50}],
     posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null
   };
-  try {
-    S.k = await gen();
-  } catch(e) {
-    console.error("Erreur crypto", e);
-  }
+  try { S.k = await gen(); } catch(e) { console.error("Erreur crypto", e); }
   save(); draw();
 };
 
@@ -159,35 +167,65 @@ async function pay(to,d,m){
 }
 
 // ==========================================
-// 1. FIL D'ACTUALITÉ (FIREBASE)
+// 1. FIL D'ACTUALITÉ (FIREBASE + FILTRES)
 // ==========================================
 async function fFeed(){
-  const P=[...(S.posts||[])].filter(p => p && p.ts).sort((a,b)=>b.ts-a.ts);
-  return `<div class="k">
-    <textarea id="px" rows="3" placeholder="Partage une info avec le quartier..."></textarea>
-    <button onclick="publierFirebase()" style="width:100%;margin-top:8px">🚀 Publier sur le réseau</button>
-  </div>` +
-  (P.map(p=>`<div class="k">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>${esc(p.n)}</b> <small>${ago(p.ts)}</small>
+  let P=[...(S.posts||[])].filter(p => p && p.ts);
+  
+  if (feedFilter === 'edu') P = P.filter(p => p.cat === 'edu');
+  if (feedFilter === 'com') P = P.filter(p => p.cat === 'com');
+  
+  P.sort((a,b)=>b.ts-a.ts);
+
+  const filterHTML = `
+    <div class="filters">
+      <button class="${feedFilter==='all'?'on':'s'}" onclick="setFilter('all')">Tout</button>
+      <button class="${feedFilter==='edu'?'on':'s'}" onclick="setFilter('edu')">📚 Éducation</button>
+      <button class="${feedFilter==='com'?'on':'s'}" onclick="setFilter('com')">🛍️ Commerce</button>
     </div>
-    <div class="post-content">${esc(p.x)}</div>
-    ${p.a==S.me.id?'':`
-      <div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
-        <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
-        <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
-        <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',100)">👑 10 KC</button>
+  `;
+
+  const postForm = `<div class="k">
+    <textarea id="px" rows="3" placeholder="Partage une info..."></textarea>
+    <select id="pcat" style="margin-bottom:8px">
+      <option value="gen">Discussion Générale</option>
+      <option value="edu">📚 Éducation / Cours</option>
+      <option value="com">🛍️ Commerce / Promo</option>
+    </select>
+    <button onclick="publierFirebase()" style="width:100%">🚀 Publier sur le réseau</button>
+  </div>`;
+
+  const postList = P.map(p=>{
+    let badge = '';
+    if(p.cat === 'edu') badge = '<span class="badge-edu">📚 Éducation</span>';
+    if(p.cat === 'com') badge = '<span class="badge-com">🛍️ Commerce</span>';
+
+    return `<div class="k">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div><b>${esc(p.n)}</b> ${badge}</div>
+        <small>${ago(p.ts)}</small>
       </div>
-    `}
-  </div>`).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication pour le moment.</p>');
+      <div class="post-content">${esc(p.x)}</div>
+      ${p.a==S.me.id?'':`
+        <div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
+          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
+          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
+          <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',100)">👑 10 KC</button>
+        </div>
+      `}
+    </div>`;
+  }).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication dans cette catégorie.</p>';
+
+  return filterHTML + postForm + postList;
 }
 
 window.publierFirebase = async () => {
   const texte = $('#px').value.trim();
+  const cat = $('#pcat').value;
   if (!texte) return toast('Écris quelque chose');
   if (!window.FB) return toast('Connexion au réseau en cours...');
   
-  const postData = { a: S.me.id, n: S.me.name, x: texte, ts: Date.now() };
+  const postData = { a: S.me.id, n: S.me.name, x: texte, cat: cat, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
     $('#px').value = '';
@@ -203,7 +241,7 @@ function ecouterPosts() {
     if (!post) return;
     if (!S.posts) S.posts = [];
     if (!S.posts.find(p => p.ts === post.ts)) {
-      S.posts.push({ id: snapshot.key, a: post.a, n: post.n, x: post.x, ts: post.ts });
+      S.posts.push({ id: snapshot.key, a: post.a, n: post.n, x: post.x, cat: post.cat || 'gen', ts: post.ts });
       if (tab === 'feed') draw(); 
     }
   });
@@ -273,43 +311,82 @@ window.buy = async (id, sellerId, title, price) => {
 }
 
 // ==========================================
-// 3. TUNNELS CHIFFRÉS (FIREBASE)
+// 3. TUNNELS CHIFFRÉS (CLASSES & BOUTIQUES)
 // ==========================================
 async function fTun(){
   if(openT) return chat();
-  return `<div class="k">
-    <h3>Créer un tunnel privé</h3>
-    <input id="tn" placeholder="Nom du tunnel">
-    <input id="tp" type="password" placeholder="Clé secrète (mot de passe)">
-    <button onclick="mkT()" style="width:100%">Créer le tunnel</button>
+  
+  return `
+  <div class="k" style="border-left:4px solid #0d47a1">
+    <h3>📚 Créer une Classe (Enseignant)</h3>
+    <p class="m" style="margin-bottom:8px">Ex: Maths 6ème, Français CP1, etc.</p>
+    <input id="tn_edu" placeholder="Nom de la classe">
+    <input id="twa_edu" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
+    <input id="tp_edu" type="password" placeholder="Clé secrète (mot de passe)">
+    <button onclick="mkT('edu')" style="width:100%;background:#0d47a1">Créer la classe</button>
   </div>
+  
+  <div class="k" style="border-left:4px solid #1b5e20">
+    <h3>🛍️ Créer une Boutique (Commerçant)</h3>
+    <p class="m" style="margin-bottom:8px">Ex: Vêtements, Nourriture, Services...</p>
+    <input id="tn_com" placeholder="Nom de la boutique / catégorie">
+    <input id="twa_com" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
+    <input id="tp_com" type="password" placeholder="Clé secrète (mot de passe)">
+    <button onclick="mkT('com')" style="width:100%;background:#1b5e20">Créer la boutique</button>
+  </div>
+
   <div class="k">
-    <h3>Rejoindre un tunnel</h3>
+    <h3>🔑 Rejoindre un tunnel existant</h3>
+    <p class="m" style="margin-bottom:8px">Entrez l'ID et la clé partagés par l'enseignant ou le commerçant.</p>
     <input id="ti" placeholder="ID du tunnel (ex. T-ABC12)">
     <input id="tq" type="password" placeholder="Clé secrète">
     <button onclick="joinT()" style="width:100%">Rejoindre</button>
-  </div>` +
-  Object.entries(S.tun||{}).map(([i,n])=>`<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid var(--g)">
-    <b>🔒 ${esc(n)}</b><br><small>ID : ${i}</small>
-  </div>`).join('');
+  </div>
+  
+  <h3 style="margin-top:20px;margin-bottom:10px">Mes Tunnels Rejoints</h3>` +
+  (Object.entries(S.tun||{}).length === 0 ? '<p class="m">Aucun tunnel pour le moment.</p>' : '') +
+  Object.entries(S.tun||{}).map(([i, t])=>{
+    let icon = '📚';
+    let color = '#0d47a1';
+    let typeName = 'Classe';
+    if(t.type === 'com') { icon = '🛍️'; color = '#1b5e20'; typeName = 'Boutique'; }
+    
+    return `<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid ${color};margin-bottom:8px;padding:12px">
+      <div style="display:flex;justify-content:space-between">
+        <b>${icon} ${esc(t.n)}</b>
+        <small class="m">${typeName}</small>
+      </div>
+      <small>ID : ${i}</small>
+    </div>`;
+  }).join('');
 }
 
-window.mkT = async () => {
-  const n=$('#tn').value.trim(), p=$('#tp').value;
+window.mkT = async (type) => {
+  const isEdu = type === 'edu';
+  const n = $(`#tn_${type}`).value.trim();
+  const p = $(`#tp_${type}`).value;
+  const wa = $(`#twa_${type}`).value.trim();
+  
   if(!n || !p) return toast('Nom et clé requis');
-  const i='T-'+R(5);
-  S.tun[i]=n; TK[i]=await tk(i,p); save(); toast('ID à partager : '+i); op(i);
+  const i = (isEdu ? 'CLS-' : 'BQT-') + R(4);
+  
+  S.tun[i] = { n: n, type: type, wa: wa }; 
+  TK[i] = await tk(i, p); 
+  save(); 
+  toast('Tunnel créé ! ID : ' + i); 
+  op(i);
 }
 
 window.joinT = async () => {
   const i=$('#ti').value.trim().toUpperCase(), p=$('#tq').value;
   if(!i || !p) return;
-  S.tun[i]=S.tun[i]||'Tunnel '+i; TK[i]=await tk(i,p); save(); op(i);
+  if(!S.tun[i]) S.tun[i] = { n: 'Tunnel ' + i, type: 'edu', wa: '' }; // Par défaut si inconnu
+  TK[i]=await tk(i,p); save(); op(i);
 }
 
 window.op = async (i) => {
   if(!TK[i]){
-    const p=prompt('Entrez la clé secrète de ce tunnel');
+    const p=prompt('Entrez la clé secrète de cet espace');
     if(!p) return; TK[i]=await tk(i,p);
   }
   openT=i; draw();
@@ -328,6 +405,7 @@ window.op = async (i) => {
 
 async function chat(){
   const i=openT, M=[];
+  const tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu', wa: '' };
   const list = S.msgs.filter(m=>m.i==i).sort((a,b)=>a.ts-b.ts);
   
   for(const m of list){
@@ -339,19 +417,32 @@ async function chat(){
       </div>
     </div>`);
   }
+
+  let waBtn = '';
+  if(tunnelData.wa){
+    const cleanWa = tunnelData.wa.replace(/\D/g,''); // Garde juste les chiffres
+    waBtn = `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 Contacter le responsable sur WhatsApp</button></a>`;
+  }
+
+  let icon = '📚'; let color = '#0d47a1';
+  if(tunnelData.type === 'com') { icon = '🛍️'; color = '#1b5e20'; }
   
-  return `<div class="k" style="height:65vh;display:flex;flex-direction:column">
+  return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
       <button class="s" onclick="go('tun')">← Retour</button>
-      <b style="align-self:center">🔒 ${esc(S.tun[i])}</b>
+      <b style="align-self:center;color:${color}">${icon} ${esc(tunnelData.n)}</b>
       <div></div>
     </div>
-    <div style="flex:1;overflow-y:auto;padding-right:5px" id="chat-box">
+    
+    ${waBtn}
+
+    <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">
       ${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation chiffrée.</p>'}
     </div>
+    
     <div style="display:flex;margin-top:10px;gap:8px">
       <input id="cm" placeholder="Message chiffré..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
-      <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
+      <button onclick="snd()" style="margin:0;padding:10px 16px;background:${color}">Envoyer</button>
     </div>
   </div>`;
 }
