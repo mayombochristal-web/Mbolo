@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V7 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V7.1 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -7,7 +7,6 @@
   import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  // ⚠️ TA CLÉ EXACTE EST ICI
   const firebaseConfig = {
     apiKey: "AIzaSyBJOlSavLqAMLhRSTwk0pUh0oJiw5QBiko",
     authDomain: "mbolo-81868.firebaseapp.com",
@@ -38,6 +37,7 @@ input,textarea,select{width:100%;padding:12px;margin:6px 0;border:1px solid var(
 input:focus,textarea:focus{border-color:var(--g)}
 button{background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 16px;font:inherit;font-weight:600;margin:4px 4px 4px 0;cursor:pointer;box-shadow:0 2px 5px rgba(11,107,58,0.3);transition:transform 0.1s}
 button:active{transform:scale(0.97)}
+button:disabled{opacity:0.6;cursor:not-allowed}
 button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
@@ -57,9 +57,14 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .post-content{margin:10px 0;font-size:15px;line-height:1.5}
 .post-image{width:100%;border-radius:10px;margin-top:8px;max-height:400px;object-fit:cover}
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
+.msg-box{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600;text-align:center}
+.msg-success{background:#e8f5e9;color:#1b5e20;border:1px solid #1b5e20}
+.msg-error{background:#ffebee;color:#b71c1c;border:1px solid #b71c1c}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style></head><body>
 
-<header><b>🥁 Mbolo V7</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V7.1</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -71,7 +76,6 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 const AIRTEL_NUMBER = '24177765496';
 const COMMISSION_RATE = 0.03;
 
-// --- ÉTAT LOCAL ---
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
 S=S||{me:null,uid:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null,directory:[]};
 
@@ -85,7 +89,6 @@ for(let k in S.tun){ if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k],
 
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
-// --- FORMATAGE & UTILITAIRES ---
 const kc=d=>(d/10).toFixed(1)+' KC',fc=d=>(d*10).toLocaleString('fr')+' FCFA';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ago=t=>new Date(t).toLocaleString('fr',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
@@ -103,7 +106,6 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// --- UPLOAD IMAGE (CATBOX) ---
 async function uploadImage(file) {
   if(!file) return null;
   toast('Envoi de l\'image...');
@@ -117,48 +119,73 @@ async function uploadImage(file) {
 }
 
 function nav(){
-  if(S.me && S.uid === 'admin') {
-    if(!TABS.find(t=>t[0]==='adm')) TABS.push(['adm','🛡️','Admin']);
-  }
+  if(S.me && S.uid === 'admin') { if(!TABS.find(t=>t[0]==='adm')) TABS.push(['adm','🛡️','Admin']); }
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
 
-// --- AUTHENTIFICATION ---
+// --- AUTHENTIFICATION AVEC RETOUR VISUEL ---
+let isRegisterMode = false;
+let authMsg = { type: '', text: '' };
+
+function showAuthMsg(type, text) { authMsg = { type, text }; }
+
 async function fAuth(){
+  let msgHtml = '';
+  if (authMsg.text) {
+    msgHtml = `<div class="msg-box ${authMsg.type === 'success' ? 'msg-success' : 'msg-error'}">${authMsg.text}</div>`;
+  }
+  
   return `<div class="k" style="text-align:center;padding:20px">
-    <h2 style="color:var(--g)">Mbolo V7</h2>
+    <h2 style="color:var(--g)">Mbolo V7.1</h2>
     <p class="m">Connecte-toi pour retrouver ton compte.</p>
-    <input id="authUser" placeholder="Ton pseudo (ex: aldo)">
-    <input id="authPass" type="password" placeholder="Ton mot de passe">
-    <button onclick="loginUser()" style="width:100%;margin-top:10px">Se connecter</button>
+    
+    ${msgHtml}
+    
+    <input id="authUser" placeholder="Ton pseudo (ex: aldo)" autocomplete="username">
+    <input id="authPass" type="password" placeholder="Ton mot de passe" autocomplete="current-password">
+    
+    <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:10px">Se connecter</button>
     <button class="s" onclick="toggleAuth()" style="width:100%;margin-top:10px" id="btnToggle">Créer un compte</button>
+    
     <div id="regFields" style="display:none;margin-top:10px;text-align:left">
       <input id="authRef" placeholder="Code parrain (optionnel)">
       <p class="m" style="font-size:11px">Si tu as été parrainé, met le code de ton ami pour qu'il gagne des KC.</p>
     </div>
+    
     <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px">
       <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici</small>
     </div>
   </div>`;
 }
 
-let isRegisterMode = false;
 window.toggleAuth = () => {
   isRegisterMode = !isRegisterMode;
+  authMsg = { type: '', text: '' }; // Réinitialiser le message
   $('#regFields').style.display = isRegisterMode ? 'block' : 'none';
   $('#btnToggle').textContent = isRegisterMode ? 'Déjà un compte ? Se connecter' : 'Créer un compte';
-  $('#btnToggle').className = isRegisterMode ? 's' : 's';
+  $('#btnLogin').textContent = isRegisterMode ? 'Créer mon compte' : 'Se connecter';
+  draw(); // Redessiner pour montrer le changement
 };
 
 window.loginUser = async () => {
   const pseudo = $('#authUser').value.trim().toLowerCase();
   const pass = $('#authPass').value;
   const refCode = $('#authRef')?.value.trim() || '';
+  const btn = $('#btnLogin');
   
-  if(!pseudo || pass.length < 6) return toast('Pseudo et mot de passe (6 car. min) requis');
+  if(!pseudo || pass.length < 6) {
+    showAuthMsg('error', 'Pseudo et mot de passe (6 car. min) requis');
+    draw(); return;
+  }
+  
+  // Afficher le spinner et désactiver le bouton
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Chargement...';
+  authMsg = { type: '', text: '' };
+  
   const email = `${pseudo}@mbolo.app`;
 
   try {
@@ -182,19 +209,30 @@ window.loginUser = async () => {
             await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => {
               if(curr) curr.bal = (curr.bal || 0) + 50; return curr;
             });
-            toast('Bonus parrainage : +5 KC !');
+            showAuthMsg('success', 'Compte créé ! Bonus de parrainage : +5 KC');
           }
         }
       }
-      toast('Compte créé !');
+      showAuthMsg('success', 'Compte créé avec succès ! Redirection...');
+      // Le onAuthStateChanged va prendre le relais et afficher l'app
     } else {
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
+      // Succès : le onAuthStateChanged va rediriger
     }
   } catch (error) {
-    if (error.code === 'auth/email-already-in-use') toast('Ce pseudo est déjà pris.');
-    else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') toast('Pseudo ou mot de passe incorrect.');
-    else if (error.code === 'auth/weak-password') toast('Mot de passe trop faible.');
-    else toast('Erreur : ' + error.message);
+    // En cas d'erreur, on réactive le bouton et on affiche le message
+    btn.disabled = false;
+    btn.textContent = isRegisterMode ? 'Créer mon compte' : 'Se connecter';
+    
+    let errMsg = 'Une erreur est survenue.';
+    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris. Essaie un autre.';
+    else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') errMsg = '❌ Pseudo ou mot de passe incorrect.';
+    else if (error.code === 'auth/weak-password') errMsg = '❌ Mot de passe trop faible (6 caractères min).';
+    else if (error.code === 'auth/network-request-failed') errMsg = '❌ Problème de connexion internet. Réessaie.';
+    else if (error.code === 'auth/too-many-requests') errMsg = '❌ Trop de tentatives. Patiente un instant.';
+    
+    showAuthMsg('error', errMsg);
+    draw(); // Redessiner pour montrer le message d'erreur
   }
 };
 
