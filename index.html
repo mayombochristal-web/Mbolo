@@ -62,7 +62,7 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
 S=S||{me:null,bal:0,led:[],posts:[],mk:[],tun:{},msgs:[],used:{},relay:[],pub:null,adm:null,admId:null,until:0,bonus:0,cert:null,k:null};
 
-// NETTOYAGE AUTO : Si les anciennes données sont corrompues, on réinitialise
+// NETTOYAGE AUTO
 if(S && !S.posts) S.posts = [];
 if(S && !S.mk) S.mk = [];
 if(S && !S.tun) S.tun = {};
@@ -90,7 +90,8 @@ const TK={}; let tab='feed', openT=null;
 const TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['ex','🔁','Échange']];
 
 function nav(){
-  $('#nv').innerHTML=TABS.concat(S.adm?[['adm','🛡️','Admin']]:[]).map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
+  // J'ai retiré 'adm' ici pour corriger l'erreur
+  $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
 window.go = t => {tab=t;openT=null;draw()};
@@ -109,7 +110,8 @@ async function draw(){
         </div>
       </div>`; return;
     }
-    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx,adm:fAdm}[tab])();
+    // J'ai retiré 'adm:fAdm' ici pour corriger l'erreur
+    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,ex:fEx}[tab])();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
