@@ -1,4 +1,4 @@
-const CACHE = 'mbolo-v10';
+const CACHE = 'mbolo-v10.0';
 const ASSETS = ['./', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
