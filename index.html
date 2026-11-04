@@ -1,10 +1,10 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V5 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V6 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onValue, set, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBJolSavlqAMLhRSTwk0pUh0ojiw5Qbiko",
@@ -18,7 +18,7 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  window.FB = { ref, push, onChildAdded, db };
+  window.FB = { ref, push, onChildAdded, onValue, set, update, get, runTransaction, db };
 </script>
 
 <style>
@@ -42,8 +42,8 @@ button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block
 button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
 h3{margin:8px 0;font-size:18px}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--l);z-index:5}
-nav a{flex:1;text-align:center;padding:12px 0 14px;font-size:12px;color:var(--m);cursor:pointer;text-decoration:none;font-weight:600}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--l);z-index:5;overflow-x:auto}
+nav a{flex:1;text-align:center;padding:12px 0 14px;font-size:12px;color:var(--m);cursor:pointer;text-decoration:none;font-weight:600;min-width:65px}
 nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;font-size:22px;margin-bottom:4px}
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:25px;display:none;z-index:9;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:600;text-align:center}
 .badge-edu{background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
@@ -54,7 +54,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 </style></head><body>
 
-<header><b>🥁 Mbolo V5</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V6</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -62,6 +62,10 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 <script type="module">
 const E=new TextEncoder(),$=s=>document.querySelector(s),R=n=>Math.random().toString(36).slice(2,2+n).toUpperCase();
 const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=864e5;
+
+const ADMIN_PASSWORD = 'ADMIN2024'; // ⚠️ CHANGE CE MOT DE PASSE ICI
+const AIRTEL_NUMBER = '24177765496'; // Ton numéro Airtel
+const COMMISSION_RATE = 0.03; // 3% de commission
 
 // --- ÉTAT LOCAL ---
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
@@ -72,13 +76,10 @@ if(!S.posts) S.posts = [];
 if(!S.mk) S.mk = [];
 if(!S.led) S.led = [];
 if(!S.directory) S.directory = [];
+if(!S.tun) S.tun = {};
 
 // MIGRATION DES ANCIENS TUNNELS
-if(S.tun){
-  for(let k in S.tun){
-    if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k], type: 'edu' }; }
-  }
-}
+for(let k in S.tun){ if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k], type: 'edu' }; } }
 
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
@@ -99,14 +100,29 @@ async function enc(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));retu
 async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(a)},k,ub(b)))}catch(e){return null}}
 
 const TK={}; let tab='feed', openT=null, feedFilter='all';
-const TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
+let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
 function nav(){
+  if(S.me && S.adm && !TABS.find(t=>t[0]==='adm')) TABS.push(['adm','🛡️','Admin']);
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
+
+// Fonction pour synchroniser le solde avec Firebase
+function syncBalance() {
+  if(!S.me || !window.FB) return;
+  const userRef = window.FB.ref(window.FB.db, 'users/' + S.me.id);
+  window.FB.onValue(userRef, (snap) => {
+    const data = snap.val();
+    if(data && data.bal !== undefined) {
+      S.bal = data.bal;
+      $('#bl').textContent = kc(S.bal);
+      if(tab === 'w') draw();
+    }
+  });
+}
 
 async function draw(){
   try {
@@ -115,22 +131,19 @@ async function draw(){
       v.innerHTML=`<div class="k" style="text-align:center;padding:30px 16px">
         <h2 style="color:var(--g)">Mbolo ! 👋</h2>
         <p>Bienvenue sur le réseau du quartier.</p>
-        <input id="nm" placeholder="Ton prénom ou pseudo" style="margin-top:20px">
-        <button onclick="start()" style="width:100%;margin-top:10px">Commencer l'aventure</button>
+        <p class="m" style="margin-bottom:15px">Créez votre compte pour commencer.</p>
+        <input id="nm" placeholder="Ton prénom ou pseudo">
+        <button onclick="start()" style="width:100%;margin-top:10px">Créer mon compte</button>
         <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px">
           <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici pour réparer</small>
         </div>
       </div>`; return;
     }
-    // Ajout de la route contact
-    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,contact:fContact}[tab])();
+    v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,contact:fContact,adm:fAdm}[tab])();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Oups, un petit bug !</h3>
-      <p>L'application a rencontré une erreur.</p>
-      <div style="font-size:12px;background:#ffebee;color:#b71c1c;padding:10px;border-radius:8px;margin:10px 0;text-align:left;overflow-x:auto">
-        ${error.message || error}
-      </div>
+      <div style="font-size:12px;background:#ffebee;color:#b71c1c;padding:10px;border-radius:8px;margin:10px 0;text-align:left;overflow-x:auto">${error.message || error}</div>
       <button class="danger" onclick="resetApp()" style="width:100%;margin-top:10px">Réparer l'application</button>
     </div>`;
     console.error(error);
@@ -146,33 +159,31 @@ window.resetApp = () => {
 
 window.start = async () => {
   const n=$('#nm').value.trim(); if(!n)return toast('Entre un nom');
+  const newId = 'M'+R(5);
   S = {
-    me: {id:'M'+R(5), name:n},
-    k: null, bal: 50, led: [{ts:Date.now(), m:'Bonus de bienvenue', d:50}],
-    posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null, directory: []
+    me: {id:newId, name:n}, k: null, bal: 0, // SOLDE DE DÉPART À 0
+    led: [], posts: [], mk: [], tun: {}, msgs: [], used: {}, relay: [], adm: null, admId: null, until: 0, bonus: 0, cert: null, directory: []
   };
-  try { S.k = await gen(); } catch(e) { console.error("Erreur crypto", e); }
+  try { 
+    S.k = await gen(); 
+    // Création du profil dans Firebase avec 0 KC
+    if(window.FB) {
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + newId), {
+        name: n, bal: 0, joined: Date.now()
+      });
+      syncBalance();
+    }
+  } catch(e) { console.error("Erreur crypto", e); }
   save(); draw();
 };
 
-// ---- ÉCHANGES & PAIEMENTS ----
-function out(o){return sign(o,S.k.prv).then(it=>{if(S.cert)it.c=S.cert;S.used[o.id]=1;S.relay.push(it);S.relay=S.relay.slice(-300);return it})}
-async function pay(to,d,m){
-  if(!S.k) return toast('Erreur de sécurité, reconnecte-toi');
-  if(d<=0||S.bal<d){toast('Solde insuffisant');return false}
-  S.bal-=d; S.led.unshift({ts:Date.now(),m:'Envoi à '+to+(m?' · '+m:''),d:-d});
-  await out({t:'x',id:R(10),f:S.me.id,to,d,m,ts:Date.now()}); save(); return true;
-}
-
 // ==========================================
-// 1. FIL D'ACTUALITÉ (FIREBASE + FILTRES)
+// 1. FIL D'ACTUALITÉ
 // ==========================================
 async function fFeed(){
   let P=[...(S.posts||[])].filter(p => p && p.ts);
-  
   if (feedFilter === 'edu') P = P.filter(p => p.cat === 'edu');
   if (feedFilter === 'com') P = P.filter(p => p.cat === 'com');
-  
   P.sort((a,b)=>b.ts-a.ts);
 
   const filterHTML = `
@@ -194,10 +205,7 @@ async function fFeed(){
   </div>`;
 
   const postList = P.map(p=>{
-    let badge = '';
-    if(p.cat === 'edu') badge = '<span class="badge-edu">📚 Éducation</span>';
-    if(p.cat === 'com') badge = '<span class="badge-com">🛍️ Commerce</span>';
-
+    let badge = p.cat === 'edu' ? '<span class="badge-edu">📚 Éducation</span>' : (p.cat === 'com' ? '<span class="badge-com">🛍️ Commerce</span>' : '');
     return `<div class="k">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
         <div><b>${esc(p.n)}</b> ${badge}</div>
@@ -212,29 +220,25 @@ async function fFeed(){
         </div>
       `}
     </div>`;
-  }).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication dans cette catégorie.</p>';
+  }).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication.</p>';
 
   return filterHTML + postForm + postList;
 }
 
 window.publierFirebase = async () => {
-  const texte = $('#px').value.trim();
-  const cat = $('#pcat').value;
+  const texte = $('#px').value.trim(), cat = $('#pcat').value;
   if (!texte) return toast('Écris quelque chose');
-  if (!window.FB) return toast('Connexion au réseau en cours...');
-  
+  if (!window.FB) return toast('Connexion en cours...');
   const postData = { a: S.me.id, n: S.me.name, x: texte, cat: cat, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
-    $('#px').value = '';
-    toast('Publié !');
+    $('#px').value = ''; toast('Publié !');
   } catch (e) { toast('Erreur réseau'); }
 };
 
 function ecouterPosts() {
   if (!window.FB) return;
-  const postsRef = window.FB.ref(window.FB.db, 'posts');
-  window.FB.onChildAdded(postsRef, (snapshot) => {
+  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
     const post = snapshot.val();
     if (!post) return;
     if (!S.posts) S.posts = [];
@@ -245,16 +249,47 @@ function ecouterPosts() {
   });
 }
 
+// TRANSFERT DE KC SÉCURISÉ VIA FIREBASE
+async function transferKC(toId, amountKc, reason) {
+  if(!window.FB) return false;
+  if(S.bal < amountKc) { toast('Solde insuffisant'); return false; }
+  
+  const amountToSend = Math.round(amountKc); // En unités de base (10 = 1 KC)
+  
+  try {
+    // 1. Débiter l'expéditeur
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.me.id), (currentData) => {
+      if (currentData && currentData.bal >= amountToSend) {
+        currentData.bal -= amountToSend;
+      }
+      return currentData;
+    });
+
+    // 2. Créditer le destinataire
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + toId), (currentData) => {
+      if (currentData) { currentData.bal = (currentData.bal || 0) + amountToSend; }
+      else { currentData = { bal: amountToSend, name: 'Inconnu' }; }
+      return currentData;
+    });
+
+    // 3. Enregistrer dans l'historique Firebase
+    window.FB.push(window.FB.ref(window.FB.db, 'transactions'), {
+      from: S.me.id, to: toId, amount: amountToSend, reason: reason, ts: Date.now()
+    });
+
+    S.led.unshift({ts:Date.now(), m:'Envoi à '+toId+' ('+reason+')', d:-amountToSend});
+    save(); return true;
+  } catch(e) { toast('Erreur réseau'); return false; }
+}
+
 window.tip = async (authorId, authorName, amount) => {
-  if(S.bal < amount) return toast('Solde insuffisant');
-  if(await pay(authorId, amount, 'Pourboire à '+authorName)) {
-    toast('Merci envoyé à ' + authorName + ' 🙏');
-    draw();
+  if(await transferKC(authorId, amount, 'Pourboire')) {
+    toast('Merci envoyé à ' + authorName + ' 🙏'); draw();
   }
 }
 
 // ==========================================
-// 2. MARCHÉ (FIREBASE)
+// 2. MARCHÉ (FIREBASE AVEC COMMISSION)
 // ==========================================
 async function fMk(){
   const M = [...(S.mk||[])].filter(m => m && m.ts).sort((a,b)=>b.ts-a.ts);
@@ -276,9 +311,7 @@ async function fMk(){
 window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim();
   if(!t || !p || p<=0) return toast('Titre et prix valides requis');
-  if (!window.FB) return toast('Connexion au réseau en cours...');
   const d = Math.round(p*10); 
-  
   const item = { id: R(8), a: S.me.id, n: S.me.name, t, d, x, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
@@ -288,8 +321,7 @@ window.sell = async () => {
 
 function ecouterMarche() {
   if (!window.FB) return;
-  const mkRef = window.FB.ref(window.FB.db, 'marketplace');
-  window.FB.onChildAdded(mkRef, (snapshot) => {
+  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
     const item = snapshot.val();
     if (!item) return;
     if (!S.mk) S.mk = [];
@@ -301,73 +333,63 @@ function ecouterMarche() {
 }
 
 window.buy = async (id, sellerId, title, price) => {
-  if(confirm(`Acheter "${title}" pour ${kc(price)} ?`)) {
-    if(await pay(sellerId, price, 'Achat: '+title)) {
-      toast('Achat effectué ! Contacte le vendeur.');
+  if(confirm(`Acheter "${title}" pour ${kc(price)} ?\n(3% de commission seront déduits pour la plateforme)`)) {
+    const commission = Math.round(price * COMMISSION_RATE);
+    const amountForSeller = price - commission;
+    
+    if(S.bal < price) return toast('Solde insuffisant');
+    
+    // On débite l'acheteur du prix total
+    if(await transferKC(sellerId, amountForSeller, 'Achat: '+title)) {
+      // On ajoute la commission à ton compte Admin
+      // (Ton ID sera défini dans l'admin)
+      const adminId = 'ADMIN_MBOLO'; // ID réservé pour l'admin
+      await transferKC(adminId, commission, 'Commission vente: '+title);
+      toast('Achat effectué ! Le vendeur a été payé.');
     }
   }
 }
 
 // ==========================================
-// 3. TUNNELS CHIFFRÉS (CLASSES & BOUTIQUES)
+// 3. TUNNELS
 // ==========================================
 async function fTun(){
   if(openT) return chat();
-  
   return `
   <div class="k" style="border-left:4px solid #0d47a1">
     <h3>📚 Créer une Classe (Enseignant)</h3>
-    <p class="m" style="margin-bottom:8px">Ex: Maths 6ème, Français CP1, etc.</p>
     <input id="tn_edu" placeholder="Nom de la classe">
-    <input id="tp_edu" type="password" placeholder="Clé secrète (mot de passe)">
+    <input id="tp_edu" type="password" placeholder="Clé secrète">
     <button onclick="mkT('edu')" style="width:100%;background:#0d47a1">Créer la classe</button>
   </div>
-  
   <div class="k" style="border-left:4px solid #1b5e20">
     <h3>🛍️ Créer une Boutique (Commerçant)</h3>
-    <p class="m" style="margin-bottom:8px">Ex: Vêtements, Nourriture, Services...</p>
-    <input id="tn_com" placeholder="Nom de la boutique / catégorie">
-    <input id="tp_com" type="password" placeholder="Clé secrète (mot de passe)">
+    <input id="tn_com" placeholder="Nom de la boutique">
+    <input id="tp_com" type="password" placeholder="Clé secrète">
     <button onclick="mkT('com')" style="width:100%;background:#1b5e20">Créer la boutique</button>
   </div>
-
   <div class="k">
-    <h3>🔑 Rejoindre un tunnel existant</h3>
-    <p class="m" style="margin-bottom:8px">Entrez l'ID et la clé partagés par l'enseignant ou le commerçant.</p>
-    <input id="ti" placeholder="ID du tunnel (ex. CLS-12A)">
+    <h3>🔑 Rejoindre un tunnel</h3>
+    <input id="ti" placeholder="ID du tunnel">
     <input id="tq" type="password" placeholder="Clé secrète">
     <button onclick="joinT()" style="width:100%">Rejoindre</button>
   </div>
-  
-  <h3 style="margin-top:20px;margin-bottom:10px">Mes Tunnels Rejoints</h3>` +
-  (Object.entries(S.tun||{}).length === 0 ? '<p class="m">Aucun tunnel pour le moment.</p>' : '') +
+  <h3 style="margin-top:20px;margin-bottom:10px">Mes Tunnels</h3>` +
   Object.entries(S.tun||{}).map(([i, t])=>{
-    let icon = '📚'; let color = '#0d47a1'; let typeName = 'Classe';
-    if(t.type === 'com') { icon = '🛍️'; color = '#1b5e20'; typeName = 'Boutique'; }
-    
+    let icon = t.type === 'com' ? '🛍️' : '📚'; let color = t.type === 'com' ? '#1b5e20' : '#0d47a1';
     return `<div class="k" onclick="op('${i}')" style="cursor:pointer;border-left:4px solid ${color};margin-bottom:8px;padding:12px">
-      <div style="display:flex;justify-content:space-between">
-        <b>${icon} ${esc(t.n)}</b>
-        <small class="m">${typeName}</small>
-      </div>
-      <small>ID : ${i}</small>
+      <b>${icon} ${esc(t.n)}</b><br><small>ID : ${i}</small>
     </div>`;
   }).join('');
 }
 
 window.mkT = async (type) => {
   const isEdu = type === 'edu';
-  const n = $(`#tn_${type}`).value.trim();
-  const p = $(`#tp_${type}`).value;
-  
+  const n = $(`#tn_${type}`).value.trim(), p = $(`#tp_${type}`).value;
   if(!n || !p) return toast('Nom et clé requis');
   const i = (isEdu ? 'CLS-' : 'BQT-') + R(4);
-  
   S.tun[i] = { n: n, type: type }; 
-  TK[i] = await tk(i, p); 
-  save(); 
-  toast('Tunnel créé ! ID : ' + i); 
-  op(i);
+  TK[i] = await tk(i, p); save(); toast('Créé ! ID : ' + i); op(i);
 }
 
 window.joinT = async () => {
@@ -379,29 +401,21 @@ window.joinT = async () => {
 
 window.op = async (i) => {
   if(!TK[i]){
-    const p=prompt('Entrez la clé secrète de cet espace');
+    const p=prompt('Entrez la clé secrète');
     if(!p) return; TK[i]=await tk(i,p);
   }
   openT=i; draw();
-  
   if (!window.FB) return;
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
-    const m = snap.val();
-    if(!m) return;
+    const m = snap.val(); if(!m) return;
     if(!S.msgs) S.msgs = [];
-    if(!S.msgs.find(x=>x.ts === m.ts)) {
-      S.msgs.push({ i, ts: m.ts, n: m.n, c: m.c });
-      if(openT === i) draw();
-    }
+    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i, ts: m.ts, n: m.n, c: m.c }); if(openT === i) draw(); }
   });
 }
 
 async function chat(){
-  const i=openT, M=[];
-  const tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
-  const list = S.msgs.filter(m=>m.i==i).sort((a,b)=>a.ts-b.ts);
-  
-  for(const m of list){
+  const i=openT, M=[], tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
+  for(const m of S.msgs.filter(m=>m.i==i).sort((a,b)=>a.ts-b.ts)){
     const t = await dec(TK[i], m.c);
     M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
       <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
@@ -410,40 +424,25 @@ async function chat(){
       </div>
     </div>`);
   }
-
-  let icon = '📚'; let color = '#0d47a1';
-  if(tunnelData.type === 'com') { icon = '🛍️'; color = '#1b5e20'; }
-
-  // Bouton pour inviter via WhatsApp (au lieu du contact direct)
-  const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}. (Je te donnerai la clé secrète en privé).`);
-  const inviteBtn = `<a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>`;
-  
+  const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}.`);
   return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
       <button class="s" onclick="go('tun')">← Retour</button>
-      <b style="align-self:center;color:${color}">${icon} ${esc(tunnelData.n)}</b>
-      <div></div>
+      <b style="align-self:center">${esc(tunnelData.n)}</b><div></div>
     </div>
-    
-    ${inviteBtn}
-
-    <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">
-      ${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation chiffrée.</p>'}
-    </div>
-    
+    <a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>
+    <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation.</p>'}</div>
     <div style="display:flex;margin-top:10px;gap:8px">
       <input id="cm" placeholder="Message chiffré..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
-      <button onclick="snd()" style="margin:0;padding:10px 16px;background:${color}">Envoyer</button>
+      <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
     </div>
   </div>`;
 }
 
 window.snd = async () => {
   const t=$('#cm').value.trim(); if(!t)return;
-  if (!window.FB) return toast('Connexion en cours...');
   const c = await enc(TK[openT], t);
   const m = { ts: Date.now(), n: S.me.name, c };
-  
   window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
   $('#cm').value='';
   if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
@@ -451,33 +450,37 @@ window.snd = async () => {
 }
 
 // ==========================================
-// 4. WALLET & PROFIL
+// 4. WALLET & PROFIL (ACHAT DE KC)
 // ==========================================
 async function fW(){
-  return `<div class="k" style="text-align:center;background:var(--g);color:#fff">
-    <h2 style="margin:0;font-size:32px">${kc(S.bal)}</h2>
+  const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon ID est : ${S.me.id}. Montant FCFA envoyé : `)}`;
+  
+  return `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
+    <h2 style="margin:0;font-size:36px">${kc(S.bal)}</h2>
     <small style="color:rgba(255,255,255,0.8)">≈ ${fc(S.bal)}</small>
-    <div style="margin-top:16px">
-      <button class="s" onclick="bonus()">🎁 Bonus du jour</button>
-    </div>
   </div>
   
-  <div class="k">
-    <h3>Mon identifiant</h3>
-    <p>Donne ce code à un ami ou au relais pour recevoir des KC :</p>
-    <textarea readonly rows="2" onclick="this.select()" style="font-size:12px;text-align:center">${S.me.id}</textarea>
-    <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.me.id}');toast('Copié')" style="width:100%">Copier mon ID</button>
+  <div class="k" style="border-left:4px solid var(--y)">
+    <h3>🛒 Acheter des KC</h3>
+    <p class="m" style="margin-bottom:10px">1 KC = 100 FCFA. Envoyez l'argent par Airtel Money au <b>${AIRTEL_NUMBER}</b>, puis cliquez pour envoyer la preuve sur WhatsApp.</p>
+    <a href="${buyLink}" target="_blank" style="text-decoration:none"><button class="wa">💬 Envoyer la demande (WhatsApp)</button></a>
   </div>
 
   <div class="k">
     <h3>Envoyer des KC</h3>
     <input id="wt" placeholder="ID du destinataire (ex. MAB12C)">
-    <input id="wd" type="number" step="0.1" placeholder="Montant (ex: 1.5)">
-    <button onclick="send()" style="width:100%">Envoyer</button>
+    <input id="wd" type="number" step="0.1" placeholder="Montant en KC">
+    <button onclick="sendUser()" style="width:100%">Envoyer</button>
   </div>
 
   <div class="k">
-    <h3>Historique</h3>
+    <h3>Mon ID Mbolo</h3>
+    <textarea readonly rows="1" onclick="this.select()" style="font-size:14px;text-align:center;font-weight:bold">${S.me.id}</textarea>
+    <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.me.id}');toast('Copié')" style="width:100%">Copier mon ID</button>
+  </div>
+
+  <div class="k">
+    <h3>Historique local</h3>
     ${(S.led||[]).filter(l=>l && l.ts).map(l=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0">
       <small>${ago(l.ts)}<br>${esc(l.m)}</small> 
       <b class="${l.d>0?'p':'n'}" style="align-self:center">${l.d>0?'+':''}${kc(l.d)}</b>
@@ -485,120 +488,177 @@ async function fW(){
   </div>`;
 }
 
-window.bonus = () => {
-  if(Date.now()-S.bonus < DAY) return toast('Reviens demain');
-  S.bonus=Date.now(); S.bal+=10; 
-  S.led.unshift({ts:Date.now(),m:'Bonus quotidien',d:10});
-  save(); draw(); toast('+1 KC reçu !');
-}
-
-window.send = async () => {
+window.sendUser = async () => {
   const to=$('#wt').value.trim().toUpperCase(), d=Math.round(parseFloat($('#wd').value)*10);
   if(!to || !d || d<=0) return toast('ID et montant valides requis');
-  if(await pay(to, d, 'Transfert')){ toast('Envoi réussi !'); draw(); }
+  if(to === S.me.id) return toast('Tu ne peux pas t\'envoyer des KC à toi-même');
+  
+  if(await transferKC(to, d, 'Transfert privé')){ toast('Envoi réussi !'); draw(); }
 }
 
 // ==========================================
-// 5. CONTACT / ANNUAIRE (Remplace Échange)
+// 5. CONTACT / ANNUAIRE
 // ==========================================
 async function fContact(){
-  // On récupère l'annuaire depuis Firebase (stocké localement dans S.directory)
   const D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
-  
   const registerForm = `<div class="k">
     <h3>📇 S'enregistrer dans l'Annuaire</h3>
-    <p class="m" style="margin-bottom:8px">Inscris-toi pour être trouvé par les élèves ou les clients.</p>
-    <input id="dn" placeholder="Ton nom ou celui de ta boutique">
-    <select id="dcat" style="margin-bottom:8px">
-      <option value="edu">📚 Enseignant</option>
-      <option value="com">🛍️ Commerçant</option>
-    </select>
-    <input id="dqu" placeholder="Quartier / Ville (ex: Libreville)">
-    <input id="dwa" type="tel" placeholder="Numéro WhatsApp (ex: 24106000000)">
+    <input id="dn" placeholder="Nom">
+    <select id="dcat"><option value="edu">📚 Enseignant</option><option value="com">🛍️ Commerçant</option></select>
+    <input id="dqu" placeholder="Quartier / Ville">
+    <input id="dwa" type="tel" placeholder="Numéro WhatsApp">
     <button onclick="registerDir()" style="width:100%">Publier ma carte</button>
   </div>`;
 
   const contactList = D.map(c => {
     let badge = c.cat === 'edu' ? '<span class="badge-edu">📚 Prof</span>' : '<span class="badge-com">🛍️ Commerce</span>';
     let cleanWa = c.wa ? c.wa.replace(/\D/g,'') : '';
-    let waBtn = cleanWa ? `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 Contacter sur WhatsApp</button></a>` : '<small class="m">Pas de WhatsApp</small>';
-    
-    // Bouton pour lui envoyer une invitation à son tunnel si c'est nous, ou pour l'inviter dans un des nôtres
-    return `<div class="k">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <b>${esc(c.n)}</b> ${badge}
-      </div>
-      <small>📍 ${esc(c.qu)}</small>
-      ${waBtn}
-    </div>`;
-  }).join('') || '<p class="m" style="text-align:center">L\'annuaire est vide. Soyez le premier à vous inscrire !</p>';
+    let waBtn = cleanWa ? `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 Contacter sur WhatsApp</button></a>` : '';
+    return `<div class="k"><b>${esc(c.n)}</b> ${badge}<br><small>📍 ${esc(c.qu)}</small>${waBtn}</div>`;
+  }).join('') || '<p class="m" style="text-align:center">Annuaire vide.</p>';
 
-  const backupZone = `<div class="k" style="opacity:0.8;margin-top:30px;border-style:dashed">
-    <h3>🛠️ Outils avancés</h3>
-    <p class="m" style="margin-bottom:10px">La sauvegarde permet de transférer ton compte sur un autre téléphone.</p>
-    <button class="s" onclick="shareB()" style="width:100%">📤 Sauvegarder mon compte</button>
-    <button class="s" onclick="document.getElementById('fi').click()" style="width:100%">📥 Restaurer</button>
-    <input type="file" id="fi" onchange="rf(this)" style="display:none">
-  </div>`;
-
-  return registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire du Quartier</h3>` + contactList + backupZone;
+  return registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire</h3>` + contactList;
 }
 
 window.registerDir = async () => {
-  const n = $('#dn').value.trim();
-  const cat = $('#dcat').value;
-  const qu = $('#dqu').value.trim();
-  const wa = $('#dwa').value.trim();
-  
-  if(!n || !wa) return toast('Nom et numéro WhatsApp requis');
-  if(!window.FB) return toast('Connexion en cours...');
-
+  const n = $('#dn').value.trim(), cat = $('#dcat').value, qu = $('#dqu').value.trim(), wa = $('#dwa').value.trim();
+  if(!n || !wa) return toast('Nom et WhatsApp requis');
   const item = { a: S.me.id, n: n, cat: cat, qu: qu, wa: wa, ts: Date.now() };
-  
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'directory'), item);
-    // On l'ajoute localement pour le voir immédiatement
-    if(!S.directory) S.directory = [];
-    S.directory.push(item);
-    save(); draw();
-    toast('Inscrit dans l\'annuaire !');
-  } catch(e) {
-    toast('Erreur réseau');
-  }
+    S.directory.push(item); save(); draw(); toast('Inscrit !');
+  } catch(e) { toast('Erreur réseau'); }
 }
 
 function ecouterAnnuaire() {
   if (!window.FB) return;
-  const dirRef = window.FB.ref(window.FB.db, 'directory');
-  window.FB.onChildAdded(dirRef, (snapshot) => {
-    const item = snapshot.val();
-    if (!item) return;
+  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'directory'), (snapshot) => {
+    const item = snapshot.val(); if (!item) return;
     if (!S.directory) S.directory = [];
-    if (!S.directory.find(d => d.ts === item.ts)) {
-      S.directory.push(item);
-      if (tab === 'contact') draw(); 
-    }
+    if (!S.directory.find(d => d.ts === item.ts)) { S.directory.push(item); if (tab === 'contact') draw(); }
   });
 }
 
-// FONCTIONS DE SAUVEGARDE (Cachées tout en bas)
-const bundle=()=>JSON.stringify({v:1,me:S.me,bal:S.bal,led:S.led,posts:S.posts,msgs:S.msgs});
-window.shareB = async () => {
-  const f=new File([bundle()],'sauvegarde-mbolo.txt',{type:'text/plain'});
-  try{ if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:'Ma sauvegarde Mbolo'}); else dl(); }catch(e){}
+// ==========================================
+// 6. ADMIN (MOT DE PASSE REQUIS)
+// ==========================================
+let isAdminAuthenticated = false;
+
+async function fAdm(){
+  if(!isAdminAuthenticated) {
+    return `<div class="k" style="text-align:center;padding:30px">
+      <h3>🛡️ Zone Admin</h3>
+      <p class="m">Entre le mot de passe pour gérer les recharges.</p>
+      <input type="password" id="admPass" placeholder="Mot de passe Admin">
+      <button onclick="checkAdmin()" style="width:100%">Se connecter</button>
+    </div>`;
+  }
+
+  // Si authentifié, on affiche le dashboard
+  return `<div class="k">
+    <h3>🛡️ Tableau de Bord</h3>
+    <p class="m">Bienvenue Admin. Voici les demandes de recharge à traiter.</p>
+    <div id="admin-recharges"><p class="m">Chargement...</p></div>
+  </div>`;
 }
-window.dl = () => {
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([bundle()],{type:'text/plain'})); a.download='sauvegarde-mbolo.txt'; a.click();
+
+window.checkAdmin = () => {
+  const pass = $('#admPass').value;
+  if(pass === ADMIN_PASSWORD) {
+    isAdminAuthenticated = true;
+    // Créer le compte admin dans Firebase si pas existant
+    if(window.FB) {
+      window.FB.set(window.FB.ref(window.FB.db, 'users/ADMIN_MBOLO'), { name: 'Admin Mbolo', bal: 0 });
+    }
+    draw();
+    loadAdminRecharges();
+  } else {
+    toast('Mot de passe incorrect');
+  }
 }
-window.rf = (i) => { const r=new FileReader(); r.onload=()=>imp(r.result); r.readAsText(i.files[0]); }
-window.imp = (t) => {
+
+async function loadAdminRecharges() {
+  if(!window.FB) return;
+  const reqRef = window.FB.ref(window.FB.db, 'recharges');
+  window.FB.onValue(reqRef, (snap) => {
+    const data = snap.val();
+    const container = $('#admin-recharges');
+    if(!container) return;
+
+    if(!data) {
+      container.innerHTML = '<p class="m">Aucune demande en attente.</p>';
+      return;
+    }
+
+    const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.status === 'pending');
+    
+    if(reqs.length === 0) {
+      container.innerHTML = '<p class="m">Aucune demande en attente.</p>';
+      return;
+    }
+
+    container.innerHTML = reqs.map(r => `
+      <div class="k" style="border:1px solid var(--y)">
+        <b>Client : ${esc(r.name)}</b><br>
+        <small>ID : ${r.userId}</small><br>
+        <small>Demande : ${r.amountFCFA} FCFA (${r.amountKC} KC)</small><br>
+        <small>Date : ${ago(r.ts)}</small>
+        <div style="margin-top:10px">
+          <button onclick="validateRecharge('${r.key}', '${r.userId}', ${r.amountKC})" style="background:var(--g)">✅ Valider</button>
+          <button onclick="rejectRecharge('${r.key}')" class="danger">❌ Refuser</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+window.validateRecharge = async (reqKey, userId, amountKC) => {
+  if(!confirm(`Confirmer avoir reçu l'argent et créditer ${amountKC/10} KC à ${userId} ?`)) return;
   try {
-    const b=JSON.parse(t);
-    if(b.me) S.me=b.me;
-    if(b.bal) S.bal=b.bal;
-    if(b.led) S.led=b.led;
-    save(); draw(); toast('Compte restauré avec succès !');
-  } catch(e){ toast('Fichier invalide'); }
+    // 1. Créditer le compte du client
+    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + userId), (curr) => {
+      if(curr) curr.bal = (curr.bal || 0) + amountKC;
+      return curr;
+    });
+    // 2. Marquer la requête comme validée
+    await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'validated' });
+    toast('Recharge validée !');
+  } catch(e) { toast('Erreur'); }
+}
+
+window.rejectRecharge = async (reqKey) => {
+  await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'rejected' });
+  toast('Requête refusée.');
+}
+
+// Bouton pour que les clients demandent une recharge (dans le Wallet)
+// Ajout d'un formulaire simple dans le Wallet
+// Modifions la fonction fW plus haut pour inclure la création de la demande :
+
+// Ajout à la fin de la génération du wallet :
+// <div class="k">
+//   <h3>💳 Envoyer la preuve de paiement</h3>
+//   <input id="reqAmt" type="number" placeholder="Montant FCFA (ex: 1000)">
+//   <button onclick="requestRecharge()">Demander la recharge</button>
+// </div>
+
+window.requestRecharge = async () => {
+  const amtFCFA = parseInt($('#reqAmt').value);
+  if(!amtFCFA || amtFCFA < 100) return toast('Montant minimum 100 FCFA');
+  
+  const amountKC = amtFCFA; // 1 KC = 100 FCFA, donc 100 FCFA = 1 KC (1 unité = 1 FCFA dans le code)
+  // Attention : dans le code, 10 unités = 1 KC. Donc pour 1000 FCFA, on a 10 KC = 100 unités.
+  // Si l'utilisateur entre 1000 FCFA, il doit avoir 10 KC (soit 100 unités).
+  // Conversion : FCFA / 100 = KC. Unités = KC * 10. Donc Unités = (FCFA / 100) * 10 = FCFA / 10.
+  
+  const unitsToCredit = Math.round(amtFCFA / 10); 
+
+  try {
+    await window.FB.push(window.FB.ref(window.FB.db, 'recharges'), {
+      userId: S.me.id, name: S.me.name, amountFCFA: amtFCFA, amountKC: unitsToCredit, status: 'pending', ts: Date.now()
+    });
+    toast('Demande envoyée ! L\'admin va vérifier.');
+  } catch(e) { toast('Erreur'); }
 }
 
 // ==========================================
