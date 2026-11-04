@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V8.1 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V9 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -42,6 +42,7 @@ button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
 button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold}
+button.dl-btn{background:#0d47a1;color:#fff;margin-top:10px;width:100%;text-align:center;display:block;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold;border:0}
 @media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 button.danger{background:var(--danger);color:#fff}
 small,.m{color:var(--m);font-size:13px}
@@ -54,10 +55,9 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .badge-com{background:#e8f5e9;color:#1b5e20;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
 @media(prefers-color-scheme:dark){.badge-edu{background:#0d47a1;color:#e3f2fd}.badge-com{background:#1b5e20;color:#e8f5e9}}
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
-.post-content{margin:10px 0;font-size:15px;line-height:1.5}
-.post-image{width:100%;border-radius:10px;margin-top:8px;max-height:400px;object-fit:cover;display:block}
-.file-link{display:flex;align-items:center;background:var(--bg);padding:12px;border-radius:10px;margin-top:8px;text-decoration:none;color:var(--t);border:1px solid var(--l);font-weight:bold}
-.file-link:hover{background:var(--l)}
+.post-content{margin:10px 0;font-size:15px;line-height:1.5;white-space:pre-wrap}
+.post-thumb{width:100%;border-radius:10px;margin-top:8px;max-height:300px;object-fit:cover;display:block;background:#eee}
+.pdf-thumb{display:flex;align-items:center;justify-content:center;background:#ffebee;height:120px;border-radius:10px;margin-top:8px;border:1px dashed #b71c1c}
 .filters{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:5px}
 .msg-box{padding:12px;border-radius:10px;margin-bottom:12px;font-weight:600;text-align:center}
 .msg-success{background:#e8f5e9;color:#1b5e20;border:1px solid #1b5e20}
@@ -69,7 +69,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V8.1</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V9</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -95,7 +95,7 @@ for(let k in S.tun){ if(typeof S.tun[k] === 'string'){ S.tun[k] = { n: S.tun[k],
 const save=()=>{try{localStorage.mtt=JSON.stringify(S)}catch(e){toast('Sauvegarde impossible')}};
 
 const kc=d=>(d/10).toFixed(1)+' KC',fc=d=>(d*10).toLocaleString('fr')+' FCFA';
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ago=t=>new Date(t).toLocaleString('fr',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 function toast(m){const t=$('#to');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2800)}
 
@@ -111,31 +111,62 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// Fonction d'affichage intelligente (Corrigée pour les images)
-function renderAttachment(url, type) {
-  if (!url) return '';
-  const isPdf = (type && type.includes('pdf')) || url.toLowerCase().endsWith('.pdf');
-  const isImg = (type && type.startsWith('image/')) || url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-
-  if (isPdf) {
-    return `<a href="${url}" target="_blank" class="file-link">📄 Télécharger le document PDF</a>`;
-  } else if (isImg) {
-    return `<img src="${url}" class="post-image" alt="Image">`;
-  } else {
-    return `<a href="${url}" target="_blank" class="file-link">📎 Télécharger le fichier</a>`;
-  }
+// --- UPLOAD IMAGE LÉGER & SÉCURISÉ ---
+// Génère une miniature compressée pour Firebase
+function generateThumbnail(file) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      // Si c'est un PDF, on renvoie null (on affichera une icône PDF)
+      resolve(null); return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.5)); // Compression à 50%
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-async function uploadFile(file) {
-  if(!file) return null;
-  toast('Envoi du fichier...');
+// Upload le fichier lourd (chiffré ou non) sur le serveur
+async function uploadFile(file, shouldEncrypt) {
+  if(!file) return { url: null, fname: '' };
+  toast('Envoi du fichier sur le serveur...');
+  
+  let fileToUpload = file;
+  let fname = file.name;
+
+  if (shouldEncrypt) {
+    // Chiffrement binaire du fichier
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const key = await tk('file_encryption', 'mbolo-secret-key-2024'); // Clé de démo
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, arrayBuffer);
+      fileToUpload = new Blob([iv, encrypted], { type: 'application/octet-stream' });
+      fname = fname + '.enc';
+    } catch(e) { toast('Erreur chiffrement fichier'); return { url: null, fname: '' }; }
+  }
+
   const formData = new FormData();
   formData.append('reqtype', 'fileupload');
-  formData.append('fileToUpload', file);
+  formData.append('fileToUpload', fileToUpload, fname);
+
   try {
     const res = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: formData });
-    return await res.text();
-  } catch(e) { toast('Erreur upload'); return null; }
+    const url = await res.text();
+    return { url: url, fname: fname };
+  } catch(e) { toast('Erreur upload'); return { url: null, fname: '' }; }
 }
 
 function nav(){
@@ -159,7 +190,7 @@ async function fAuth(){
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V8.1</h2>
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V9</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
@@ -171,9 +202,6 @@ async function fAuth(){
     <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">
       ${isLogin ? 'Se connecter' : 'Créer mon compte'}
     </button>
-    <div style="margin-top:20px;border-top:1px solid var(--l);padding-top:10px;text-align:center">
-      <small class="m" onclick="resetApp()" style="text-decoration:underline;cursor:pointer">L'application bug ? Clique ici</small>
-    </div>
   </div>`;
 }
 
@@ -194,7 +222,6 @@ window.loginUser = async () => {
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
       await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { name: pseudo, bal: 0, joined: Date.now(), refCode: refCode });
-
       if(refCode) {
         const allUsers = await window.FB.get(window.FB.ref(window.FB.db, 'users'));
         if(allUsers.exists()) {
@@ -203,7 +230,6 @@ window.loginUser = async () => {
           if(parrainId) {
             await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + parrainId), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
             await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + uid), (curr) => { if(curr) curr.bal = (curr.bal || 0) + 50; return curr; });
-            authMsg = { type: 'success', text: 'Compte créé ! Bonus : +5 KC' };
           }
         }
       }
@@ -236,13 +262,9 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       S.me = { id: user.uid.substring(0,6).toUpperCase(), name: fallbackName };
       S.bal = 0;
     }
-    S.posts = []; 
-    S.mk = [];
-    save(); 
-    draw();
-    ecouterPosts();
-    ecouterMarche();
-    ecouterAnnuaire();
+    S.posts = []; S.mk = [];
+    save(); draw();
+    ecouterPosts(); ecouterMarche(); ecouterAnnuaire();
   } else {
     S.me = null; S.uid = null; S.posts = []; S.mk = []; save(); draw();
   }
@@ -307,12 +329,28 @@ async function fFeed(){
 
   const postList = P.map(p=>{
     let badge = p.cat === 'edu' ? '<span class="badge-edu">📚 Éducation</span>' : (p.cat === 'com' ? '<span class="badge-com">🛍️ Commerce</span>' : '');
+    
+    // Affichage de la miniature
+    let thumbHtml = '';
+    if (p.thumb) {
+      thumbHtml = `<img src="${p.thumb}" class="post-thumb" alt="Miniature">`;
+    } else if (p.isPdf) {
+      thumbHtml = `<div class="pdf-thumb"><span style="font-size:40px">📄</span> <span style="margin-left:10px;font-weight:bold">Document PDF</span></div>`;
+    }
+
+    // Bouton de téléchargement
+    let dlBtn = '';
+    if (p.fileUrl) {
+      dlBtn = `<a href="${p.fileUrl}" target="_blank" download class="dl-btn">📥 Télécharger le fichier original</a>`;
+    }
+
     return `<div class="k">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
         <div><b>${esc(p.n)}</b> ${badge}</div><small>${ago(p.ts)}</small>
       </div>
       <div class="post-content">${esc(p.x)}</div>
-      ${renderAttachment(p.img, p.ftype)}
+      ${thumbHtml}
+      ${dlBtn}
       ${p.a==S.uid?'':`<div style="margin-top:10px;border-top:1px solid var(--l);padding-top:10px">
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',10)">🔥 1 KC</button>
           <button class="tip" onclick="tip('${p.a}','${esc(p.n)}',50)">💎 5 KC</button>
@@ -329,10 +367,20 @@ window.publierFirebase = async () => {
   const cat = $('#pcat').value;
   const file = $('#pimg').files[0];
   if (!texte && !file) return toast('Écris un texte ou ajoute un fichier');
-  let imgUrl = null;
-  let ftype = null;
-  if(file) { imgUrl = await uploadFile(file); ftype = file.type; }
-  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, img: imgUrl, ftype: ftype, ts: Date.now() };
+
+  let thumb = null, fileUrl = null, isPdf = false;
+  
+  if (file) {
+    isPdf = file.type === 'application/pdf';
+    thumb = await generateThumbnail(file); // Miniature (ou null si PDF)
+    const uploadRes = await uploadFile(file, false); // Pas chiffré pour le fil public
+    fileUrl = uploadRes.url;
+  }
+
+  const postData = { 
+    a: S.uid, n: S.me.name, x: texte, cat: cat, 
+    thumb: thumb, fileUrl: fileUrl, isPdf: isPdf, ts: Date.now() 
+  };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
     $('#px').value = ''; $('#pimg').value = ''; toast('Publié !');
@@ -341,17 +389,13 @@ window.publierFirebase = async () => {
 
 function ecouterPosts() {
   if (!window.FB) return;
-  window.FB.onValue(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
-    const data = snapshot.val();
-    S.posts = [];
-    if(data) {
-      Object.keys(data).forEach(key => {
-        const p = data[key];
-        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', img: p.img, ftype: p.ftype, ts: p.ts });
-      });
+  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'posts'), (snapshot) => {
+    const p = snapshot.val(); if (!p) return;
+    if (!S.posts) S.posts = [];
+    if (!S.posts.find(x => x.ts === p.ts)) {
+      S.posts.push({ id: snapshot.key, ...p });
+      if (tab === 'feed') draw(); 
     }
-    save();
-    if (tab === 'feed') draw(); 
   });
 }
 
@@ -368,23 +412,34 @@ async function fMk(){
     <input type="file" id="mimg" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:5px">
     <button onclick="sell()" style="width:100%">Publier l'annonce</button>
   </div>` +
-  (M.map(l=>`<div class="k">
-    <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
-    <small>Vendeur : ${esc(l.n)}</small>
-    <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
-    ${renderAttachment(l.img, l.ftype)}
-    ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
-  </div>`).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
+  (M.map(l=>{
+    let thumbHtml = l.thumb ? `<img src="${l.thumb}" class="post-thumb">` : (l.isPdf ? `<div class="pdf-thumb"><span style="font-size:30px">📄</span> Document</div>` : '');
+    let dlBtn = l.fileUrl ? `<a href="${l.fileUrl}" target="_blank" class="dl-btn">📥 Voir / Télécharger</a>` : '';
+    return `<div class="k">
+      <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
+      <small>Vendeur : ${esc(l.n)}</small>
+      <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
+      ${thumbHtml}
+      ${dlBtn}
+      ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
+    </div>`;
+  }).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
 }
 
 window.sell = async () => {
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim(), file=$('#mimg').files[0];
   if(!t || !p || p<=0) return toast('Titre et prix requis');
-  let imgUrl = null;
-  let ftype = null;
-  if(file) { imgUrl = await uploadFile(file); ftype = file.type; }
+  
+  let thumb = null, fileUrl = null, isPdf = false;
+  if (file) {
+    isPdf = file.type === 'application/pdf';
+    thumb = await generateThumbnail(file);
+    const uploadRes = await uploadFile(file, false);
+    fileUrl = uploadRes.url;
+  }
+
   const d = Math.round(p*10); 
-  const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, img: imgUrl, ftype: ftype, ts: Date.now() };
+  const item = { id: R(8), a: S.uid, n: S.me.name, t, d, x, thumb, fileUrl, isPdf, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
     S.mk.push(item); save(); draw(); toast('Annonce publiée !');
@@ -393,17 +448,10 @@ window.sell = async () => {
 
 function ecouterMarche() {
   if (!window.FB) return;
-  window.FB.onValue(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
-    const data = snapshot.val();
-    S.mk = [];
-    if(data) {
-      Object.keys(data).forEach(key => {
-        const l = data[key];
-        S.mk.push({ id: key, a: l.a, n: l.n, t: l.t, d: l.d, x: l.x, img: l.img, ftype: l.ftype, ts: l.ts });
-      });
-    }
-    save();
-    if (tab === 'mk') draw(); 
+  window.FB.onChildAdded(window.FB.ref(window.FB.db, 'marketplace'), (snapshot) => {
+    const l = snapshot.val(); if (!l) return;
+    if (!S.mk) S.mk = [];
+    if (!S.mk.find(m => m.ts === l.ts)) { S.mk.push({ id: snapshot.key, ...l }); if (tab === 'mk') draw(); }
   });
 }
 
@@ -424,7 +472,7 @@ window.buy = async (id, sellerUid, title, price) => {
 }
 
 // ==========================================
-// 3. TUNNELS
+// 3. TUNNELS (AVEC FICHIERS CHIFFRÉS)
 // ==========================================
 async function fTun(){
   if(openT) return chat();
@@ -479,20 +527,30 @@ window.op = async (i) => {
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
     const m = snap.val(); if(!m) return;
     if(!S.msgs) S.msgs = [];
-    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i, ts: m.ts, n: m.n, c: m.c }); if(openT === i) draw(); }
+    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i, ...m }); if(openT === i) draw(); }
   });
 }
 
 async function chat(){
   const i=openT, M=[], tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
-  for(const m of S.msgs.filter(m=>m.i==i).sort((a,b)=>a.ts-b.ts)){
-    const t = await dec(TK[i], m.c);
-    M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
-      <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
-      <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
-        ${t==null?'<i class="m">🔒 Clé incorrecte</i>':esc(t)}
-      </div>
-    </div>`);
+  for(const m of S.msgs.filter(x=>x.i==i).sort((a,b)=>a.ts-b.ts)){
+    if (m.fileUrl) {
+      M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
+        <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
+        <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
+          <div>📄 Fichier sécurisé</div>
+          <a href="${m.fileUrl}" target="_blank" class="dl-btn" style="padding:8px;font-size:12px;margin-top:5px;background:#fff;color:#000">📥 Télécharger (Chiffré)</a>
+        </div>
+      </div>`);
+    } else {
+      const t = await dec(TK[i], m.c);
+      M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
+        <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
+        <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
+          ${t==null?'<i class="m">🔒 Clé incorrecte</i>':esc(t)}
+        </div>
+      </div>`);
+    }
   }
   const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}.`);
   return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
@@ -500,21 +558,41 @@ async function chat(){
       <button class="s" onclick="go('tun')">← Retour</button><b style="align-self:center">${esc(tunnelData.n)}</b><div></div>
     </div>
     <a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>
+    
     <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation.</p>'}</div>
-    <div style="display:flex;margin-top:10px;gap:8px">
-      <input id="cm" placeholder="Message..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
-      <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
+    
+    <div style="margin-top:10px;background:var(--bg);padding:10px;border-radius:10px;border:1px solid var(--l)">
+      <input type="file" id="tfile" accept="image/*,application/pdf" style="font-size:12px;margin-bottom:8px">
+      <div style="display:flex;gap:8px">
+        <input id="cm" placeholder="Message..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
+        <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
+      </div>
     </div>
   </div>`;
 }
 
 window.snd = async () => {
-  const t=$('#cm').value.trim(); if(!t)return;
-  const c = await enc(TK[openT], t);
-  const m = { ts: Date.now(), n: S.me.name, c };
-  window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
-  $('#cm').value='';
-  if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
+  const t=$('#cm').value.trim(); 
+  const file = $('#tfile').files[0];
+  if(!t && !file) return;
+
+  if (file) {
+    // Si c'est un fichier, on le chiffre !
+    const uploadRes = await uploadFile(file, true);
+    if(uploadRes.url) {
+      const m = { ts: Date.now(), n: S.me.name, fileUrl: uploadRes.url };
+      window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
+      if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
+    }
+    $('#tfile').value = '';
+  } else {
+    // Texte normal
+    const c = await enc(TK[openT], t);
+    const m = { ts: Date.now(), n: S.me.name, c };
+    window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
+    $('#cm').value='';
+    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
+  }
   setTimeout(()=>{const cb=$('#chat-box'); if(cb)cb.scrollTop=cb.scrollHeight;},100);
 }
 
@@ -662,6 +740,7 @@ window.draw = async function() {
 // LANCEMENT
 // ==========================================
 draw();
+setTimeout(() => { ecouterPosts(); ecouterMarche(); ecouterAnnuaire(); }, 1000);
 
 </script>
 
