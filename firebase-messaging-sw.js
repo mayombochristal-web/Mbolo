@@ -59,7 +59,10 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ---------- Cache PWA ----------
-const CACHE = 'mbolo-v24';
+// ⚠️ IMPORTANT: Change ce numéro de version (v25 -> v26 -> v27...) à CHAQUE FOIS 
+// que tu déploies une mise à jour pour forcer les téléphones à télécharger le nouveau code.
+const CACHE = 'mbolo-v25'; 
+
 const STATIC_ASSETS = [
   './',
   './index.html',
