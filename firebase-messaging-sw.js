@@ -4,6 +4,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 firebase.initializeApp({
   apiKey: "AIzaSyBJOlSavLqAMLhRSTwk0pUh0oJiw5QBiko",
   authDomain: "mbolo-81868.firebaseapp.com",
+  databaseURL: "https://mbolo-81868-default-rtdb.firebaseio.com",
   projectId: "mbolo-81868",
   storageBucket: "mbolo-81868.firebasestorage.app",
   messagingSenderId: "265201834213",
@@ -12,7 +13,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Affiche la notification système (quand l'app est en arrière-plan)
 messaging.onBackgroundMessage((payload) => {
   const d = payload.data || payload.notification || {};
   return self.registration.showNotification(d.title || 'Mbolo', {
@@ -25,7 +25,6 @@ messaging.onBackgroundMessage((payload) => {
   });
 });
 
-// Quand on clique sur la notification, on ouvre l'application
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil((async () => {
@@ -35,7 +34,6 @@ self.addEventListener('notificationclick', (e) => {
   })());
 });
 
-// --- CACHE POUR LE MODE HORS-LIGNE ---
 const CACHE = 'mbolo-v22';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
