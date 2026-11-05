@@ -5,7 +5,7 @@
  *  - Cache excluant firebaseio/googleapis/gstatic/cloudinary/wa.me
  *  - notificationclick : focus + navigation
  *  - onBackgroundMessage : skip si notification auto-affichée par FCM
- *  - Cache version bumpé v25
+ *  - Cache version bumpé v26
  */
 
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
