@@ -22,9 +22,8 @@
 
   const app = initializeApp(firebaseConfig);
   
-  // --- PILIER 3 : Jeton de débogage FIXE pour ton téléphone ---
-  // C'est ce code que tu vas copier dans Firebase
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d";
+  // --- PILIER 3 : Ton vrai jeton de débogage ---
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = "517E65D7-EB66-4647-B3A1-B15DC7EBCBFC";
   
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider('6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B'),
