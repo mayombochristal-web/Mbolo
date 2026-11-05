@@ -7,11 +7,11 @@ admin.initializeApp({
 });
 
 const db = admin.database();
-const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2'; // Votre UID
+const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2';
 const FEE_TR = 0.03, FEE_WD = 0.03; 
 const kc = d => (d / 10).toFixed(1) + " KC";
 
-// Notifications
+// 1. Fonction d'envoi des notifications (API Moderne)
 async function sendPush(uid, token, title, body) {
   try {
     await admin.messaging().send({
@@ -19,89 +19,55 @@ async function sendPush(uid, token, title, body) {
       data: { title, body },
       webpush: { headers: { Urgency: 'high', TTL: '86400' } }
     });
+    return true;
   } catch (e) {
-    if (e.code === 'messaging/registration-token-not-registered') {
+    console.error("Push échoué:", e.code || e.message);
+    if (e.code === 'messaging/registration-token-not-registered' || e.code === 'messaging/invalid-registration-token') {
       await db.ref(`users/${uid}/fcmToken`).remove().catch(() => {});
     }
+    return false;
   }
 }
 
-// Traitement principal
-async function processRequests() {
+// 2. Validation des transferts en attente
+async function processTransfers() {
   const snap = await db.ref('transfer_requests').orderByChild('s').equalTo('p').once('value');
-  if (!snap.exists()) return;
+  if (!snap.exists()) { console.log("Aucune demande en attente."); return; }
 
   for (const [key, r] of Object.entries(snap.val())) {
     try {
-      // 1. Verrouiller la demande pour éviter les doubles traitements
       const claim = await db.ref(`transfer_requests/${key}/s`).transaction(cur => cur === 'p' ? 'work' : undefined);
-      if (!claim.committed) continue; // Déjà traitée par un autre processus
+      if (!claim.committed) { console.log(`${key} déjà traitée.`); continue; }
 
       const fee = Math.round(r.a * (r.t === 'wd' ? FEE_WD : FEE_TR));
-      const now = Date.now();
-      const U = {};
+      let toId = null;
+      if (r.t === 'tr') {
+        toId = (await db.ref(`ids/${r.to}`).once('value')).val();
+        if (!toId) { console.log(`Destinataire ${r.to} inconnu → refusé.`); await db.ref(`transfer_requests/${key}/s`).set('no'); continue; }
+      }
+
+      const debit = await db.ref(`users/${r.f}/bal`).transaction(cur => (cur || 0) >= r.a ? (cur || 0) - r.a : undefined);
+      if (!debit.committed) { console.log(`Solde insuffisant pour ${r.fn} → refusé.`); await db.ref(`transfer_requests/${key}/s`).set('no'); continue; }
+
+      if (toId) await db.ref(`users/${toId}/bal`).transaction(cur => (cur || 0) + r.a - fee);
+      await db.ref(`users/${ADMIN_UID}/bal`).transaction(cur => (cur || 0) + fee);
+
+      const now = Date.now(), U = {};
       const nid = p => db.ref(p).push().key;
-
-      // 2. Vérifier le solde de l'expéditeur
-      const senderBal = (await db.ref(`users/${r.f}/bal`).once('value')).val() || 0;
-      if (senderBal < r.a) {
-        U[`transfer_requests/${key}/s`] = 'no';
-        await db.ref().update(U);
-        continue;
+      
+      U[`users/${r.f}/hist/${nid('h')}`] = { t: r.t, txt: r.t === 'wd' ? "Retrait demandé" : "Envoi vers " + (r.to || ""), a: -r.a, ts: now };
+      U[`inbox/${r.f}/${nid('n')}`] = { txt: r.t === 'wd' ? `💸 Ton retrait de ${kc(r.a)} est validé.` : `🔁 Ton envoi de ${kc(r.a)} est validé.`, ts: now };
+      
+      if (toId) {
+        U[`users/${toId}/hist/${nid('h')}`] = { t: 'tr', txt: "Reçu de " + r.fn, a: r.a - fee, ts: now };
+        U[`inbox/${toId}/${nid('n')}`] = { txt: `🎉 Tu as reçu ${kc(r.a - fee)} de ${r.fn}`, ts: now };
       }
-
-      // 3. Traitement selon le type
-      if (r.t === 'sub') {
-        // C'est un abonnement à un tunnel
-        const tid = r.m.replace('Abonnement ', '').trim(); // ex: CLS-ABCD
-        
-        // Débiter l'élève
-        U[`users/${r.f}/bal`] = senderBal - r.a;
-        U[`users/${r.f}/hist/${nid('h')}`] = { t: 'sub', txt: `Abonnement ${tid}`, a: -r.a, ts: now };
-        
-        // Créditer le propriétaire du tunnel
-        const ownerUid = (await db.ref(`tunnels/${tid}/meta/owner`).once('value')).val();
-        if (ownerUid) {
-          const ownerBal = (await db.ref(`users/${ownerUid}/bal`).once('value')).val() || 0;
-          U[`users/${ownerUid}/bal`] = ownerBal + (r.a - fee);
-          U[`users/${ownerUid}/hist/${nid('h')}`] = { t: 'topup', txt: `Abonnement de ${r.fn}`, a: r.a - fee, ts: now };
-          U[`inbox/${ownerUid}/${nid('n')}`] = { txt: `💸 Nouvel abonné (${r.fn}) pour ${tid}`, ts: now };
-        }
-
-        // Ajouter l'abonné (valide 30 jours)
-        U[`tunnels/${tid}/subscribers/${r.f}`] = { ts: now, exp: now + (30 * 24 * 60 * 60 * 1000) };
-        U[`inbox/${r.f}/${nid('n')}`] = { txt: `✅ Abonnement validé pour ${tid}`, ts: now };
-        
-      } else {
-        // Transfert classique (tr) ou Retrait (wd)
-        let toId = null;
-        if (r.t === 'tr') {
-          toId = (await db.ref(`ids/${r.to}`).once('value')).val();
-          if (!toId) { U[`transfer_requests/${key}/s`] = 'no'; await db.ref().update(U); continue; }
-        }
-
-        U[`users/${r.f}/bal`] = senderBal - r.a;
-        U[`users/${r.f}/hist/${nid('h')}`] = { t: r.t, txt: r.t === 'wd' ? "Retrait" : "Envoi vers " + r.to, a: -r.a, ts: now };
-        
-        if (toId) {
-          const toBal = (await db.ref(`users/${toId}/bal`).once('value')).val() || 0;
-          U[`users/${toId}/bal`] = toBal + (r.a - fee);
-          U[`users/${toId}/hist/${nid('h')}`] = { t: 'tr', txt: "Reçu de " + r.fn, a: r.a - fee, ts: now };
-          U[`inbox/${toId}/${nid('n')}`] = { txt: `🎉 Reçu ${kc(r.a - fee)} de ${r.fn}`, ts: now };
-        }
-
-        // Commission Admin
-        const adminBal = (await db.ref(`users/${ADMIN_UID}/bal`).once('value')).val() || 0;
-        U[`users/${ADMIN_UID}/bal`] = adminBal + fee;
-      }
-
-      // Finalisation
+      
+      U[`log/${nid('log')}`] = { by: 'robot', t: r.t, f: r.fn, to: r.to || "", a: r.a, fee, ts: now };
       U[`transfer_requests/${key}/s`] = 'ok';
-      U[`log/${nid('log')}`] = { by: 'robot', t: r.t, f: r.fn, a: r.a, fee, ts: now };
       
       await db.ref().update(U);
-      console.log(`✅ Opération ${key} validée.`);
-
+      console.log(`✅ ${key} validée (${r.t}, ${kc(r.a)}).`);
     } catch (e) {
       console.error(`Erreur sur ${key}:`, e);
       await db.ref(`transfer_requests/${key}/s`).transaction(cur => cur === 'work' ? 'p' : undefined).catch(() => {});
@@ -109,23 +75,26 @@ async function processRequests() {
   }
 }
 
-// Envoi des push inbox
+// 3. Envoi des notifications push pour toutes les nouvelles alertes (Inbox)
 async function pushInbox() {
   const snap = await db.ref('inbox').once('value');
   if (!snap.exists()) return;
+  let sent = 0;
   for (const [uid, items] of Object.entries(snap.val())) {
     const fresh = Object.entries(items).filter(([, n]) => !n.pushed && n.txt);
     if (!fresh.length) continue;
+    
     const token = (await db.ref(`users/${uid}/fcmToken`).once('value')).val();
     for (const [nk, n] of fresh) {
-      if (token) await sendPush(uid, token, "Mbolo 🥁", n.txt);
+      if (token) { await sendPush(uid, token, "Mbolo 🥁", n.txt); sent++; }
       await db.ref(`inbox/${uid}/${nk}/pushed`).set(true); 
     }
   }
+  console.log(`🔔 ${sent} notification(s) push envoyée(s).`);
 }
 
 (async () => {
-  await processRequests();
+  await processTransfers();
   await pushInbox();
   process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
