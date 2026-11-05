@@ -1,11 +1,11 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V18 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V19 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, set, update, get, remove, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyBJOlSavLqAMLhRSTwk0pUh0oJiw5QBiko",
@@ -22,8 +22,9 @@ try {
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider("6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B"), isTokenAutoRefreshEnabled: true });
 } catch (e) { console.warn("AppCheck", e); }
 
-const messaging = getMessaging(app);
-window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, messaging, getToken, onMessage };
+const msgP = isSupported().then(ok => ok ? getMessaging(app) : null).catch(() => null);
+
+window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, msgP, getToken, onMessage };
 </script>
 <style>
 :root{--g:#0b6b3a;--y:#fcd116;--bg:#f6f4ec;--c:#fff;--t:#1d1d1b;--m:#6b6b66;--l:#ddd9cb;--d:#b3261e;--blue:#0d47a1}
@@ -44,40 +45,106 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);bord
 nav a{flex:1;text-align:center;padding:10px 0 12px;font-size:12px;color:var(--m);min-width:64px;font-weight:600;cursor:pointer}
 nav a.on{color:var(--g);font-weight:800}nav i{display:block;font-style:normal;font-size:22px}
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:25px;display:none;z-index:9;max-width:90%;text-align:center}
-.b{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:5px;background:#e3f2fd;color:#0d47a1}.b.c{background:#e8f5e9;color:#1b5e20}.b.a{background:var(--y);color:#000}.b.m{background:#ffcdd2;color:#b71c1c}
+.bd{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;margin-left:5px;background:#e3f2fd;color:#0d47a1}.bd.c{background:#e8f5e9;color:#1b5e20}.bd.a{background:var(--y);color:#000}.bd.m{background:#ffcdd2;color:#b71c1c}
 .th{width:100%;border-radius:10px;margin-top:8px;max-height:320px;object-fit:cover}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px}
 .err{background:#ffebee;color:#b71c1c;padding:12px;border-radius:10px;margin-bottom:10px;text-align:center}
 .h-item{display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0;font-size:14px}
 .h-item:last-child{border:0}
-.notif{background:#fffde7;border-left:4px solid var(--y);padding:10px;margin-bottom:8px;border-radius:0 8px 8px 0;position:relative}
+.notif{background:#fffde7;border-left:4px solid var(--y);padding:10px;margin-bottom:8px;border-radius:0 8px 8px 0;position:relative;color:#1d1d1b}
 .notif small{color:#8a6d3b}
+.ban{border:2px solid var(--y);text-align:center}
 </style></head><body>
-<header><b>🥁 Mbolo V18</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V19</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main><div id="to"></div><nav id="nv"></nav>
 
 <script type="module">
 const FB = window.FB, { ref, push, set, update, get, remove, onValue, query, limitToLast, db, auth } = FB;
 const $ = s => document.querySelector(s);
 const CFG = { AIRTEL: "24177765496", FEE_TR: 0.03, FEE_WD: 0.03, CLOUD: "vmqquxa8", PRESET: "mbolo_preset" };
-const VAPID_KEY = "BBmQn1YW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_YL8fhnIZc59-SgrkuafvU"; 
+const VAPID_KEY = "BBmQn1YW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_YL8fhnIZc59-SgrkuafvU";
+const SW_URL = "firebase-messaging-sw.js";
 const ERR = { "auth/email-already-in-use": "Ce pseudo est déjà pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Pas de connexion internet." };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kc = d => (d / 10).toFixed(1) + " KC", fc = d => (d * 10).toLocaleString("fr") + " FCFA";
 const ago = t => new Date(t).toLocaleString("fr", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-let tt; function toast(m) { const t = $("#to"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3000); }
+let tt; function toast(m) { const t = $("#to"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); }
 const toArr = s => { const v = s.val() || {}; return Object.keys(v).map(k => ({ id: k, ...v[k] })); };
 const genCode = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return [...crypto.getRandomValues(new Uint8Array(6))].map(x => a[x % a.length]).join(""); };
 const nid = p => push(ref(db, p)).key;
 const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [] });
 
 let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
+let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false;
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
 const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } };
 const busy = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
 const soft = t => { if (tab === t && !busy()) draw(); };
+
+const notifState = () => (!("Notification" in window) || !("serviceWorker" in navigator)) ? "unsupported" : Notification.permission;
+
+async function getSW() {
+  if (swReg) return swReg;
+  if (!("serviceWorker" in navigator)) return null;
+  await navigator.serviceWorker.register(SW_URL, { scope: "./" });
+  swReg = await navigator.serviceWorker.ready;
+  return swReg;
+}
+
+async function localNotif(title, body) {
+  if (notifState() !== "granted") return;
+  try {
+    const reg = await getSW();
+    await reg.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", vibrate: [200, 100, 200], tag: "mbolo-local" });
+  } catch (e) { console.warn("localNotif", e); }
+}
+
+async function saveToken(silent) {
+  if (notifState() !== "granted" || !S.uid) return false;
+  try {
+    const messaging = await FB.msgP;
+    if (!messaging) { if (!silent) toast("Les notifications push ne sont pas disponibles sur ce navigateur."); return false; }
+    const reg = await getSW();
+    const token = await FB.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if (!token) { console.warn("FCM : aucun token (vérifie la clé VAPID)"); if (!silent) toast("Impossible d'obtenir le jeton de notification."); return false; }
+    localStorage.setItem("mbolo_fcm_" + S.uid, token);
+    const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val();
+    if (cur !== token) await update(ref(db, "users/" + S.uid), { fcmToken: token });
+    if (!fcmHooked) { fcmHooked = true; FB.onMessage(messaging, p => { const d = p.data || p.notification || {}; toast("🔔 " + (d.title || "Mbolo") + " : " + (d.body || "")); }); }
+    console.log("✅ FCM token enregistré");
+    return true;
+  } catch (e) {
+    console.error("FCM", e);
+    if (!silent) toast("Erreur notifications : " + (e.code || e.message));
+    return false;
+  }
+}
+
+async function enableNotifs() {
+  const st = notifState();
+  if (st === "unsupported") { toast("Non disponible ici. Sur iPhone : Partager → Sur l'écran d'accueil, puis ouvre Mbolo depuis l'icône."); return; }
+  if (st === "denied") { toast("Notifications bloquées : touche le cadenas près de l'adresse → Notifications → Autoriser, puis recharge."); return; }
+  const p = st === "granted" ? "granted" : await Notification.requestPermission();
+  if (p === "granted") { const ok = await saveToken(false); if (ok) toast("🔔 Notifications activées !"); }
+  else if (p === "denied") toast("Tu as refusé. Tu pourras les activer plus tard dans les réglages du navigateur.");
+  draw();
+}
+async function testNotif() { await localNotif("Mbolo", "Test réussi : les notifications fonctionnent 🥁"); }
+function laterNotif() { notifLater = true; draw(); }
+
+function armAutoPrompt() {
+  if (notifAsked || notifState() !== "default") return;
+  document.addEventListener("click", () => {
+    if (notifAsked || notifState() !== "default" || !S.uid) return;
+    notifAsked = true; enableNotifs();
+  }, { capture: true, once: true });
+}
+const notifBanner = () => (notifState() === "default" && !notifLater)
+  ? `<div class="k ban"><b>🔔 Reste informé</b><p class="m" style="margin:6px 0">Reçois une alerte quand tu reçois de l'argent ou un message, même si l'app est fermée.</p><button class="b" onclick="enableNotifs()" style="width:100%">Activer les notifications</button><button class="s" onclick="laterNotif()" style="width:100%">Plus tard</button></div>` : "";
+
+getSW().catch(e => console.warn("SW", e));
 
 const E = new TextEncoder(), b64 = u => { u = new Uint8Array(u); let s = ""; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(s); }, ub = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function tk(id, pw) { const m = await crypto.subtle.importKey("raw", E.encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt: E.encode(id), iterations: 100000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); }
@@ -103,7 +170,17 @@ function nav() {
 }
 function go(t) { tab = t; openT = null; if (tunOff) { tunOff(); tunOff = null; } draw(); }
 const errBox = e => `<div class="k err">⚠️ ${esc(e.message || e)}<br><button onclick="out()">Se déconnecter</button></div>`;
-const out = () => FB.signOut(auth);
+async function out() {
+  try {
+    const t = localStorage.getItem("mbolo_fcm_" + S.uid);
+    if (t) {
+      const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val();
+      if (cur === t) await update(ref(db, "users/" + S.uid), { fcmToken: null });
+      localStorage.removeItem("mbolo_fcm_" + S.uid);
+    }
+  } catch (e) { }
+  FB.signOut(auth);
+}
 
 async function draw() {
   nav(); const v = $("#v");
@@ -112,7 +189,8 @@ async function draw() {
     if (!S.uid) { v.innerHTML = fAuth(); return; }
     if (S.susp) { v.innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><p class="m">Contacte l'administrateur sur WhatsApp.</p><button onclick="out()">Se déconnecter</button></div>`; return; }
     if (!S.name) { v.innerHTML = `<div class="k" style="text-align:center"><p>Préparation de ton compte…</p><button class="s" onclick="out()">Se déconnecter</button></div>`; return; }
-    v.innerHTML = await ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
+    const ban = (tab === "tun" && openT) ? "" : notifBanner();
+    v.innerHTML = ban + await ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
     if (tab === "tun" && openT) { const c = $("#cm"); if (c) c.onkeydown = e => { if (e.key === "Enter") snd(); }; renderMsgs(); }
   } catch (e) { console.error(e); v.innerHTML = errBox(e); }
 }
@@ -157,11 +235,13 @@ async function initUser(u) {
   S.name = p.name; S.code = p.code;
   try { S.tun = JSON.parse(localStorage["mbolo_tun_" + u.uid] || "{}"); } catch (e) { }
   listen(ref(db, "users/" + u.uid + "/bal"), s => { S.bal = s.val() || 0; nav(); soft("w"); });
-  listen(ref(db, "users/" + u.uid + "/hist"), s => { S.hist = toArr(s).sort((a,b) => b.ts - a.ts).slice(0, 20); soft("w"); });
-  listen(ref(db, "inbox/" + u.uid), s => { 
-    const n = toArr(s).sort((a,b) => b.ts - a.ts);
-    if(n.length > S.notifs.length && S.notifs.length > 0) { toast("🔔 Nouvelle notification !"); }
-    S.notifs = n; soft("w"); 
+  listen(ref(db, "users/" + u.uid + "/hist"), s => { S.hist = toArr(s).sort((a, b) => b.ts - a.ts).slice(0, 20); soft("w"); });
+  let firstInbox = true;
+  listen(ref(db, "inbox/" + u.uid), s => {
+    const n = toArr(s).sort((a, b) => b.ts - a.ts);
+    if (!firstInbox && n.length > S.notifs.length) toast("🔔 " + (n[0]?.txt || "Nouvelle notification"));
+    firstInbox = false;
+    S.notifs = n; soft("w");
   });
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
   listen(query(ref(db, "posts"), limitToLast(30)), s => { S.posts = toArr(s); soft("feed"); });
@@ -173,35 +253,8 @@ async function initUser(u) {
   }
   if (S.admin || S.mod) listen(ref(db, "reports"), s => { A.rep = s.val() || {}; soft("adm"); });
 
-  // --- FCM : RÉCUPÉRATION DU TOKEN PUSH ---
-  try {
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      console.log("Permission notification :", permission);
-      
-      if (permission === "granted") {
-        const token = await FB.getToken(FB.messaging, { vapidKey: VAPID_KEY });
-        console.log("Token FCM généré :", token);
-        
-        if (token) {
-          await update(ref(db, "users/" + u.uid), { fcmToken: token });
-          console.log("✅ FCM Token sauvegardé dans Firebase !");
-          toast("🔔 Notifications activées !");
-        } else {
-          console.warn("⚠️ Aucun token généré. Vérifie la clé VAPID.");
-        }
-      } else {
-        console.warn("⚠️ Notifications bloquées par l'utilisateur.");
-      }
-    }
-    FB.onMessage(FB.messaging, (payload) => {
-      toast("🔔 " + (payload.notification?.title || "Notification") + " : " + (payload.notification?.body || ""));
-    });
-  } catch(e) { 
-    console.error("❌ Erreur FCM :", e); 
-  }
-
   draw();
+  if (notifState() === "granted") saveToken(true); else armAutoPrompt();
 }
 FB.onAuthStateChanged(auth, u => {
   ready = true;
@@ -210,7 +263,7 @@ FB.onAuthStateChanged(auth, u => {
 });
 
 const setF = f => { feedF = f; draw(); };
-const badge = c => c === "edu" ? '<span class="b">📚 Éducation</span>' : c === "com" ? '<span class="b c">🛍️ Commerce</span>' : c === "ann" ? '<span class="b a">📢 Officiel</span>' : "";
+const badge = c => c === "edu" ? '<span class="bd">📚 Éducation</span>' : c === "com" ? '<span class="bd c">🛍️ Commerce</span>' : c === "ann" ? '<span class="bd a">📢 Officiel</span>' : "";
 function fFeed() {
   const P = S.posts.filter(p => feedF === "all" || p.cat === feedF).sort((a, b) => b.ts - a.ts);
   return `<div class="tabs"><button class="${feedF === "all" ? "" : "s"}" onclick="setF('all')">Tout</button><button class="${feedF === "edu" ? "" : "s"}" onclick="setF('edu')">📚 Éducation</button><button class="${feedF === "com" ? "" : "s"}" onclick="setF('com')">🛍️ Commerce</button></div>
@@ -291,14 +344,14 @@ async function joinT() {
 async function op(i) {
   if (!TK[i]) { const p = prompt("Clé secrète de cet espace"); if (!p) return; TK[i] = await tk(i, p); }
   openT = i; S.msgs = []; if (tunOff) tunOff();
-  tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), s => { 
-    const newMsgs = toArr(s);
+  tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), s => {
     const oldCount = S.msgs.length;
-    S.msgs = newMsgs.sort((a, b) => a.ts - b.ts);
-    if (S.msgs.length > oldCount && oldCount > 0 && S.msgs[S.msgs.length-1].n !== S.name) {
-      dec(TK[i], S.msgs[S.msgs.length-1].c).then(t => { if(t) new Notification("Nouveau message", { body: S.msgs[S.msgs.length-1].n + " : " + t.slice(0,50) }); });
+    S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
+    const last = S.msgs[S.msgs.length - 1];
+    if (last && S.msgs.length > oldCount && oldCount > 0 && last.n !== S.name && document.hidden) {
+      dec(TK[i], last.c).then(t => { if (t) localNotif("Nouveau message", last.n + " : " + t.slice(0, 50)); });
     }
-    renderMsgs(); 
+    renderMsgs();
   }, () => toast("Accès refusé"));
   draw();
 }
@@ -311,7 +364,7 @@ async function renderMsgs() {
   const b = $("#cb"); if (!b || !openT) return; const h = [];
   for (const m of S.msgs) {
     const t = await dec(TK[openT], m.c), me = m.n === S.name;
-    h.push(`<div style="margin-bottom:10px;text-align:${me ? "right" : "left"}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}${me || S.admin || S.mod ? ` <a onclick="delMsg('${m.id}')">🗑️</a>` : ""}</small><br><span style="display:inline-block;padding:9px 13px;border-radius:12px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--l)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "<i>🔒 Clé incorrecte</i>" : esc(t)}</span></div>`);
+    h.push(`<div style="margin-bottom:10px;text-align:${me ? "right" : "left"}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}${me || S.admin || S.mod ? ` <a onclick="delMsg('${m.id}')" style="cursor:pointer">🗑️</a>` : ""}</small><br><span style="display:inline-block;padding:9px 13px;border-radius:12px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--l)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "<i>🔒 Clé incorrecte</i>" : esc(t)}</span></div>`);
   }
   b.innerHTML = h.join("") || "<p class='m' style='text-align:center'>Début de la conversation.</p>"; b.scrollTop = b.scrollHeight;
 }
@@ -337,24 +390,30 @@ function fW() {
       <small>${ago(n.ts)}</small>
     </div>`).join("") : "<p class='m'>Aucune notification.</p>";
 
+  const ns = notifState();
+  const alertHtml = `<div class="k"><h3>📲 Alertes sur cet appareil</h3><p class="m">${ns === "granted" ? "✅ Activées : tu seras prévenu même app fermée."
+    : ns === "denied" ? "🚫 Bloquées. Touche le cadenas 🔒 près de l'adresse → Notifications → Autoriser, puis recharge la page."
+    : ns === "unsupported" ? "Non disponible ici. Sur iPhone : Partager → Sur l'écran d'accueil, puis ouvre Mbolo depuis l'icône."
+    : "Pas encore activées."}</p>${ns === "default" ? `<button class="b" onclick="enableNotifs()" style="width:100%">Activer les notifications</button>` : ""}${ns === "granted" ? `<button class="b" onclick="enableNotifs()">Re-synchroniser</button><button class="s" onclick="testNotif()">Tester</button>` : ""}</div>`;
+
   return (S.freeze ? '<div class="err">⚠️ Opérations d\'argent suspendues par l\'administration.</div>' : "") +
     `<div class="k" style="text-align:center;background:var(--g);color:#fff"><h2 style="margin:0;font-size:34px">${kc(S.bal)}</h2><small style="color:#ffffffcc">≈ ${fc(S.bal)} · 1 KC = 100 FCFA</small></div>
-  
+
   <div class="k" style="border-left:4px solid var(--y)"><h3>🔔 Mes Notifications</h3>${notifHtml}</div>
-  
+  ${alertHtml}
   <div class="k" style="border-left:4px solid var(--y)"><h3>🛒 Acheter des KC</h3><p class="m">Envoie les FCFA par Airtel Money au +${CFG.AIRTEL}, puis déclare ta recharge.</p>
   <input id="ra" type="number" step="10" placeholder="Montant envoyé (FCFA, min. 500)"><input id="rr" maxlength="40" placeholder="Référence Airtel Money (optionnel)"><button onclick="reqRech()"${fz} style="width:100%">Déclarer ma recharge</button>
   <a href="https://wa.me/${CFG.AIRTEL}?text=${encodeURIComponent("Bonjour, je souhaite acheter des KC. Mon code Mbolo : " + S.code)}" target="_blank"><button class="wa">💬 Prévenir sur WhatsApp</button></a></div>
   <div class="k"><h3>Envoyer des KC</h3><input id="wt" maxlength="6" placeholder="Code du destinataire (6 car.)"><input id="wd" type="number" step="0.1" placeholder="Montant en KC"><button onclick="reqTr()"${fz} style="width:100%">Demander l'envoi</button></div>
   <div class="k"><h3>💸 Retirer en FCFA</h3><input id="xk" type="number" step="0.1" placeholder="Montant en KC (min. 5)"><input id="xn" type="tel" maxlength="20" placeholder="Ton numéro Airtel Money"><button onclick="reqWd()"${fz} style="width:100%">Demander le retrait (comm. ${CFG.FEE_WD * 100} %)</button></div>
   <div class="k" style="text-align:center"><h3>Mon code Mbolo</h3><b style="font-size:22px;letter-spacing:3px">${esc(S.code)}</b></div>
-  
+
   <div class="k"><h3>📜 Relevé de compte</h3>${histHtml}</div>
-  
+
   <div class="k"><button class="s" onclick="delAcc()">⚠️ Supprimer mon compte (0 KC requis)</button></div>
   <button class="r" onclick="out()" style="width:100%">Se déconnecter</button>`;
 }
-async function readNotif(id) { try { await remove(ref(db, "inbox/" + S.uid + "/" + id)); } catch(e){} }
+async function readNotif(id) { try { await remove(ref(db, "inbox/" + S.uid + "/" + id)); } catch (e) { } }
 async function send(path, d, msg) { if (S.freeze) return toast("Opérations suspendues"); try { await push(ref(db, path), d); toast(msg); draw(); } catch (e) { toast("Refusé : " + (e.code || e.message)); } }
 function reqRech() {
   const a = parseInt($("#ra").value); if (!(a >= 500) || a % 10) return toast("Montant invalide (500 min., multiple de 10)");
@@ -386,14 +445,14 @@ const setSearch = v => { dirSearch = v.toLowerCase(); draw(); };
 function fContact() {
   const me = S.dir.find(d => d.id === S.uid) || {};
   let D = S.dir;
-  if (dirSearch) D = D.filter(d => (d.n||"").toLowerCase().includes(dirSearch) || (d.qu||"").toLowerCase().includes(dirSearch) || d.cat.includes(dirSearch));
-  
+  if (dirSearch) D = D.filter(d => (d.n || "").toLowerCase().includes(dirSearch) || (d.qu || "").toLowerCase().includes(dirSearch) || (d.cat || "").includes(dirSearch));
+
   return `<div class="k"><h3>📇 Ma carte</h3><input id="dn" maxlength="40" placeholder="Nom / Boutique" value="${esc(me.n)}"><select id="dc"><option value="edu">📚 Enseignant</option><option value="com"${me.cat === "com" ? " selected" : ""}>🛍️ Commerçant</option></select><input id="dq" maxlength="40" placeholder="Quartier / Ville" value="${esc(me.qu)}"><input id="dw" type="tel" placeholder="WhatsApp (ex. 24177…)" value="${esc(me.wa)}">
   <label class="m" style="display:flex;gap:8px"><input type="checkbox" id="dk" style="width:auto"> J'accepte que mon numéro soit visible des membres</label><button onclick="regDir()">Publier</button>${me.id ? '<button class="s" onclick="delDir()">Retirer ma carte</button>' : ""}</div>
   <h3>Annuaire</h3>
   <input placeholder="🔍 Rechercher un prof, un commerce, un quartier…" oninput="setSearch(this.value)" value="${esc(dirSearch)}">
   ` +
-  (D.sort((a, b) => b.ts - a.ts).map(c => `<div class="k"><b>${esc(c.n)}</b>${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa">💬 WhatsApp</button></a></div>`).join("") || "<p class='m'>Aucun résultat.</p>");
+    (D.sort((a, b) => b.ts - a.ts).map(c => `<div class="k"><b>${esc(c.n)}</b>${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa">💬 WhatsApp</button></a></div>`).join("") || "<p class='m'>Aucun résultat.</p>");
 }
 async function regDir() {
   const n = $("#dn").value.trim(), wa = $("#dw").value.replace(/\D/g, "");
@@ -423,8 +482,8 @@ const byCode = async c => (await get(ref(db, "ids/" + c))).val();
 
 const sendNotif = () => guard(async () => {
   const c = $("#nc").value.trim().toUpperCase(), txt = $("#nt").value.trim();
-  if(!c || !txt) return toast("Code et message requis");
-  const u = await byCode(c); if(!u) return toast("Code inconnu");
+  if (!c || !txt) return toast("Code et message requis");
+  const u = await byCode(c); if (!u) return toast("Code inconnu");
   await push(ref(db, "inbox/" + u), { txt, ts: Date.now() });
   toast("Notification envoyée !");
 });
@@ -444,19 +503,19 @@ const suspend = on => guard(async () => {
 
 const setMod = on => guard(async () => {
   const c = $("#ac").value.trim().toUpperCase(), u = await byCode(c); if (!u) return toast("Code inconnu");
-  if(on) { await set(ref(db, "moderators/" + u), true); toast("Modérateur nommé ⭐"); }
+  if (on) { await set(ref(db, "moderators/" + u), true); toast("Modérateur nommé ⭐"); }
   else { await remove(ref(db, "moderators/" + u)); toast("Modérateur retiré"); }
 });
 
 const okRech = k => guard(async () => {
   const r = A.rech[k]; if (!r || r.status !== "pending" || !confirm("Créditer " + kc(r.amountKC) + " à " + r.name + " ?")) return;
   const b = (await get(ref(db, "users/" + r.uid + "/bal"))).val() || 0;
-  await update(ref(db), { 
-    ["users/" + r.uid + "/bal"]: b + r.amountKC, 
+  await update(ref(db), {
+    ["users/" + r.uid + "/bal"]: b + r.amountKC,
     ["users/" + r.uid + "/hist/" + nid("h")]: { t: "topup", txt: "Recharge validée", a: r.amountKC, ts: Date.now() },
     ["inbox/" + r.uid + "/" + nid("n")]: { txt: "✅ Ta recharge de " + kc(r.amountKC) + " a été validée !", ts: Date.now() },
-    ["recharges/" + k + "/status"]: "validated", 
-    ...log({ t: "topup", f: r.name, a: r.amountKC, fee: 0 }) 
+    ["recharges/" + k + "/status"]: "validated",
+    ...log({ t: "topup", f: r.name, a: r.amountKC, fee: 0 })
   }); toast("Validé ✅");
 });
 
@@ -467,22 +526,22 @@ const okTr = k => guard(async () => {
   const fee = Math.round(r.a * (r.t === "wd" ? CFG.FEE_WD : CFG.FEE_TR)), B = {}, bal = async u => B[u] ??= (await get(ref(db, "users/" + u + "/bal"))).val() || 0;
   if (await bal(r.f) < r.a) return toast("Solde insuffisant");
   B[r.f] -= r.a;
-  
+
   let toId = null;
   if (r.t === "tr") { toId = await byCode(r.to); if (!toId) return toast("Destinataire inconnu"); await bal(toId); B[toId] += r.a - fee; }
   await bal(S.uid); B[S.uid] += fee;
 
-  const U = { 
-    ["transfer_requests/" + k + "/s"]: "ok", 
-    ["users/" + r.f + "/hist/" + nid("h")]: { t: r.t, txt: r.t === 'wd' ? "Retrait demandé" : "Envoi vers " + (r.to||""), a: -r.a, ts: Date.now() },
+  const U = {
+    ["transfer_requests/" + k + "/s"]: "ok",
+    ["users/" + r.f + "/hist/" + nid("h")]: { t: r.t, txt: r.t === 'wd' ? "Retrait demandé" : "Envoi vers " + (r.to || ""), a: -r.a, ts: Date.now() },
     ["inbox/" + r.f + "/" + nid("n")]: { txt: r.t === 'wd' ? "💸 Ton retrait de " + kc(r.a) + " est validé." : "🔁 Ton envoi de " + kc(r.a) + " est validé.", ts: Date.now() },
-    ...log({ t: r.t, f: r.fn, to: r.to || "", a: r.a, fee }) 
+    ...log({ t: r.t, f: r.fn, to: r.to || "", a: r.a, fee })
   };
   if (toId) {
     U["users/" + toId + "/hist/" + nid("h")] = { t: "tr", txt: "Reçu de " + r.fn, a: r.a - fee, ts: Date.now() };
     U["inbox/" + toId + "/" + nid("n")] = { txt: "🎉 Tu as reçu " + kc(r.a - fee) + " de " + r.fn, ts: Date.now() };
   }
-  
+
   for (const u in B) U["users/" + u + "/bal"] = B[u];
   await update(ref(db), U); toast(r.t === "wd" ? "Validé : pense à payer par Airtel Money" : "Validé ✅");
 });
@@ -495,15 +554,7 @@ const rmRep = k => guard(async () => {
   await update(ref(db), { ["reports/" + k + "/s"]: "done" }); toast("Contenu retiré");
 });
 
-Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, report, sell, delMk, buy, mkT, joinT, op, snd, delMsg, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep });
+Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, report, sell, delMk, buy, mkT, joinT, op, snd, delMsg, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep, enableNotifs, testNotif, laterNotif });
 draw();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-    navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
-  });
-}
 </script>
 </body></html>
