@@ -1,7 +1,7 @@
 {
   "name": "Mbolo Tam Tam",
   "short_name": "Mbolo",
-  "description": "Le réseau du quartier sans data. Échange, vends et discute hors-ligne.",
+  "description": "Le réseau du quartier sans data. Échange, vends et discute.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
