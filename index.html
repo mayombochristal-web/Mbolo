@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, set, update, get, remove, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, push, set, update, get, remove, onValue, query, orderByKey, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
@@ -30,7 +30,7 @@ try {
 } catch (e) { console.warn("AppCheck", e); }
 
 const msgP = isSupported().then(ok => ok ? getMessaging(app) : null).catch(() => null);
-window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, msgP, getToken, onMessage };
+window.FB = { ref, push, set, update, get, remove, onValue, query, orderByKey, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, msgP, getToken, onMessage };
 </script>
 <style>
 /* ==========================================
@@ -119,7 +119,7 @@ small,.m{color:var(--m);font-size:13px}
 <nav id="nv"></nav>
 
 <script type="module">
-const FB = window.FB, { ref, push, set, update, get, remove, onValue, query, limitToLast, db, auth } = FB;
+const FB = window.FB, { ref, push, set, update, get, remove, onValue, query, orderByKey, limitToLast, db, auth } = FB;
 const $ = s => document.querySelector(s);
 const CFG = { AIRTEL: "24177765496", FEE_TR: 0.03, FEE_WD: 0.03, CLOUD: "vmqquxa8", PRESET: "mbolo_preset" };
 const VAPID_KEY = "BBmQnlYW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_Yl8fhnIZc59-SgrkuafvU";
@@ -309,8 +309,13 @@ async function initUser(u) {
   });
 
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
-  listen(query(ref(db, "posts"), limitToLast(50)), s => { S.posts = toArr(s); soft("feed"); });
-  listen(query(ref(db, "marketplace"), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
+  
+  // CORRECTION ICI : ajout de orderByKey() pour les posts
+  listen(query(ref(db, "posts"), orderByKey(), limitToLast(50)), s => { S.posts = toArr(s); soft("feed"); });
+  
+  // CORRECTION ICI : ajout de orderByKey() pour le marché
+  listen(query(ref(db, "marketplace"), orderByKey(), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
+  
   listen(ref(db, "directory"), s => { S.dir = toArr(s); soft("contact"); });
   if (S.admin) { listen(ref(db, "recharges"), s => { A.rech = s.val() || {}; soft("adm"); }); listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); }); }
   if (S.admin || S.mod) listen(ref(db, "reports"), s => { A.rep = s.val() || {}; soft("adm"); });
@@ -429,7 +434,9 @@ async function joinT() {
 async function op(i) {
   if (!TK[i]) { const p = prompt("Clé secrète de cet espace"); if (!p) return; TK[i] = await tk(i, p); }
   openT = i; S.msgs = []; if (tunOff) tunOff();
-  tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), async s => {
+  
+  // CORRECTION ICI : ajout de orderByKey() pour le chat
+  tunOff = onValue(query(ref(db, "tunnels/" + i), orderByKey(), limitToLast(50)), async s => {
     const oldCount = S.msgs.length;
     S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
     if (S.msgs.length > oldCount && oldCount > 0 && S.msgs[S.msgs.length-1].n !== S.name) {
