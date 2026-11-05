@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V17 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V18 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -54,7 +54,7 @@ nav a.on{color:var(--g);font-weight:800}nav i{display:block;font-style:normal;fo
 .notif{background:#fffde7;border-left:4px solid var(--y);padding:10px;margin-bottom:8px;border-radius:0 8px 8px 0;position:relative}
 .notif small{color:#8a6d3b}
 </style></head><body>
-<header><b>🥁 Mbolo V17</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V18</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main><div id="to"></div><nav id="nv"></nav>
 
 <script type="module">
@@ -177,18 +177,29 @@ async function initUser(u) {
   try {
     if ("Notification" in window) {
       const permission = await Notification.requestPermission();
+      console.log("Permission notification :", permission);
+      
       if (permission === "granted") {
         const token = await FB.getToken(FB.messaging, { vapidKey: VAPID_KEY });
+        console.log("Token FCM généré :", token);
+        
         if (token) {
           await update(ref(db, "users/" + u.uid), { fcmToken: token });
-          console.log("✅ FCM Token sauvegardé:", token);
+          console.log("✅ FCM Token sauvegardé dans Firebase !");
+          toast("🔔 Notifications activées !");
+        } else {
+          console.warn("⚠️ Aucun token généré. Vérifie la clé VAPID.");
         }
+      } else {
+        console.warn("⚠️ Notifications bloquées par l'utilisateur.");
       }
     }
     FB.onMessage(FB.messaging, (payload) => {
       toast("🔔 " + (payload.notification?.title || "Notification") + " : " + (payload.notification?.body || ""));
     });
-  } catch(e) { console.warn("Erreur FCM", e); }
+  } catch(e) { 
+    console.error("❌ Erreur FCM :", e); 
+  }
 
   draw();
 }
@@ -487,5 +498,12 @@ const rmRep = k => guard(async () => {
 Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, report, sell, delMk, buy, mkT, joinT, op, snd, delMsg, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep });
 draw();
 </script>
-<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
+  });
+}
+</script>
 </body></html>
