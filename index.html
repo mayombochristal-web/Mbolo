@@ -33,18 +33,10 @@ const msgP = isSupported().then(ok => ok ? getMessaging(app) : null).catch(() =>
 window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, msgP, getToken, onMessage };
 </script>
 <style>
-/* ==========================================
-   MBOLO V20 — PREMIUM DESIGN SYSTEM
-========================================== */
-:root {
-  --g: #087c46; --y: #fcd116; --bg: #f5f7f3; --c: #ffffff; --t: #18251d; --m: #758278; --l: #e8eee8; --d: #e34444; --blue: #2463eb;
-  --radius: 20px; --shadow: 0 5px 22px rgba(20, 60, 35, .055);
-}
+:root { --g: #087c46; --y: #fcd116; --bg: #f5f7f3; --c: #ffffff; --t: #18251d; --m: #758278; --l: #e8eee8; --d: #e34444; --blue: #2463eb; --radius: 20px; --shadow: 0 5px 22px rgba(20,60,35,.055); }
 @media(prefers-color-scheme:dark){ :root { --bg: #101710; --c: #1b251d; --t: #edf4ed; --m: #a0afa2; --l: #344337; --shadow: 0 5px 22px rgba(0,0,0,.18); } }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font:16px 'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t);padding-bottom:84px;letter-spacing:-.2px;overflow-x:hidden}
-
-/* Header & Nav */
 header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;min-height:66px;box-shadow:0 3px 15px rgba(0,0,0,.12)}
 header .logo{font-size:21px;font-weight:900;display:flex;align-items:center;gap:8px}
 header .logo span{background:var(--y);color:#222;border-radius:20px;padding:4px 12px;font-weight:800;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.12)}
@@ -55,14 +47,10 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(255,255,
 nav a{flex:1;text-align:center;padding:9px 3px;font-size:11px;color:var(--m);font-weight:600;text-decoration:none;display:flex;flex-direction:column;justify-content:center;align-items:center}
 nav a i{font-size:22px;margin-bottom:3px;font-style:normal}
 nav a.on{color:var(--g)}
-
-/* Layout & Cards */
 main{padding:18px 15px 35px;max-width:600px;margin:auto}
 .k{background:var(--c);border:1px solid rgba(20,70,40,.055);border-radius:var(--radius);padding:19px;margin-bottom:15px;box-shadow:var(--shadow)}
 .k h2, .k h3{letter-spacing:-.6px;font-weight:800;margin:0 0 10px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-
-/* Forms & Buttons */
 button{min-height:43px;border-radius:13px;padding:11px 17px;font-weight:700;background:var(--g);color:#fff;border:0;cursor:pointer;margin:4px 4px 4px 0;transition:transform .1s}
 button:active{transform:scale(.96)}
 button.s{background:var(--l);color:var(--t)}
@@ -74,26 +62,26 @@ button:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{width:100%;padding:14px;margin:6px 0;border:1.5px solid var(--l);border-radius:13px;background:var(--bg);color:var(--t);font:inherit;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(8,124,70,.10)}
 small,.m{color:var(--m);font-size:13px}
-
-/* Composants spécifiques */
 .wallet-card{background:var(--g);color:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:0 8px 25px rgba(8,124,70,.25)}
 .wallet-card .bal{font-size:32px;font-weight:900;margin:5px 0}
 .stories-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;margin-bottom:15px;scrollbar-width:none}
 .story{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer}
 .story .img{width:64px;height:64px;border-radius:50%;background:var(--l);border:3px solid var(--g);display:flex;justify-content:center;align-items:center;overflow:hidden}
-.story .img img{width:100%;height:100%;object-fit:cover}
 .story span{font-size:11px;font-weight:600;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .post-avatar{width:40px;height:40px;border-radius:50%;background:var(--l);display:flex;justify-content:center;align-items:center;font-weight:bold;color:var(--g);overflow:hidden}
 .post-avatar img{width:100%;height:100%;object-fit:cover}
 .post-content{font-size:15px;line-height:1.5;margin:10px 0;white-space:pre-wrap}
 .post-actions{display:flex;justify-content:space-between;border-top:1px solid var(--l);padding-top:10px;margin-top:10px;color:var(--m);font-size:13px;font-weight:600}
-
-/* Loader & Toast */
 #loader{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:100;backdrop-filter:blur(4px)}
 #loader::after{content:'';width:40px;height:40px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;border-radius:16px;padding:13px 20px;font-weight:600;z-index:99;display:none;max-width:90%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.bd{border-radius:20px;padding:4px 8px;font-size:10px;font-weight:700;background:#e3f2fd;color:#0d47a1}
+.bd.c{background:#e8f5e9;color:#1b5e20}
+.bd.a{background:var(--y);color:#000}
+.catalog-item{display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--l);padding:10px 0}
+.catalog-item img{width:50px;height:50px;border-radius:10px;object-fit:cover}
 </style></head><body>
 
 <header>
@@ -118,7 +106,6 @@ const VAPID_KEY = "BBmQnlYW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMyg
 const SW_URL = "firebase-messaging-sw.js";
 const ERR = { "auth/email-already-in-use": "Ce pseudo est pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Connexion internet instable." };
 
-// Utilitaires
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kc = d => (d / 10).toFixed(1) + " KC", fc = d => (d * 10).toLocaleString("fr") + " FCFA";
 const ago = t => new Date(t).toLocaleString("fr", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -126,18 +113,17 @@ let tt; function toast(m) { const t = $("#to"); t.textContent = m; t.style.displ
 function load(on) { $("#loader").style.display = on ? "flex" : "none"; }
 const toArr = s => { const v = s.val() || {}; return Object.keys(v).map(k => ({ id: k, ...v[k] })); };
 const genCode = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return [...crypto.getRandomValues(new Uint8Array(6))].map(x => a[x % a.length]).join(""); };
-const nid = p => push(ref(db, p)).key;
 const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [], avatar: null, bio: "", age: null, address: "" });
 
-let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
+let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, catOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
 let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false, lastBal = null;
+let currentTunMeta = null, currentSubs = null;
 
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
-const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } };
+const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } if (catOff) { catOff(); catOff = null; } };
 const busy = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
 const soft = t => { if (tab === t && !busy()) draw(); };
 
-// Notifications & SW
 const notifState = () => (!("Notification" in window) || !("serviceWorker" in navigator)) ? "unsupported" : Notification.permission;
 async function getSW() { 
   if (swReg) return swReg; if (!("serviceWorker" in navigator)) return null; 
@@ -173,30 +159,26 @@ function laterNotif() { notifLater = true; draw(); }
 function armAutoPrompt() { if (notifAsked || notifState() !== "default") return; document.addEventListener("click", () => { if (notifAsked || notifState() !== "default" || !S.uid) return; notifAsked = true; enableNotifs(); }, { capture: true, once: true }); }
 getSW().catch(console.warn);
 
-// Cryptographie
 const E = new TextEncoder(), b64 = u => { u = new Uint8Array(u); let s = ""; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(s); }, ub = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function tk(id, pw) { const m = await crypto.subtle.importKey("raw", E.encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt: E.encode(id), iterations: 100000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); }
 async function enc(k, t) { const iv = crypto.getRandomValues(new Uint8Array(12)); return b64(iv) + "." + b64(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, E.encode(t))); }
 async function dec(k, c) { try { const [a, b] = c.split("."); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(a) }, k, ub(b))); } catch (e) { return null; } }
 
-// Images
 const shrink = f => new Promise(res => { const im = new Image(); im.onload = () => { const r = Math.min(1, 1280 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * r; c.height = im.height * r; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src); c.toBlob(b => res(b || f), "image/jpeg", 0.8); }; im.onerror = () => res(f); im.src = URL.createObjectURL(f); });
 async function upImg(f) { load(true); try { const fd = new FormData(); fd.append("file", await shrink(f)); fd.append("upload_preset", CFG.PRESET); const j = await (await fetch(`https://api.cloudinary.com/v1_1/${CFG.CLOUD}/image/upload`, { method: "POST", body: fd })).json(); if (!j.secure_url) throw 0; return j.secure_url; } catch (e) { toast("Image refusée."); return null; } finally { load(false); } }
-const img = u => u ? `<img class="th" loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}" style="width:100%;border-radius:15px;margin-top:8px;max-height:350px;object-fit:cover">` : "";
+const img = u => u ? `<img loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}" style="width:100%;border-radius:15px;margin-top:8px;max-height:350px;object-fit:cover">` : "";
 
-// Navigation
 function nav() { 
-  const T = [ ["feed", "🏠", "Accueil"], ["tun", "👥", "Groupes"], ["mk", "🛍️", "Marché"], ["w", "🔔", "Notifs"], ["contact", "👤", "Profil"] ]; 
+  const T = [ ["feed", "🏠", "Accueil"], ["tun", "🤝", "Réseau"], ["mk", "🛍️", "Marché"], ["w", "🔔", "Notifs"], ["contact", "👤", "Profil"] ]; 
   if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]); 
   $("#nv").innerHTML = S.uid && S.name && !S.susp ? T.map(t => `<a class="${tab == t[0] ? "on" : ""}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join("") : ""; 
   const av = $("#hd-avatar"); 
   if (S.avatar) { av.innerHTML = `<img src="${esc(S.avatar)}">`; } 
   else if (S.name) { av.innerHTML = S.name.charAt(0).toUpperCase(); } 
 }
-function go(t) { tab = t; openT = null; if (tunOff) { tunOff(); tunOff = null; } draw(); }
+function go(t) { tab = t; openT = null; if (tunOff) { tunOff(); tunOff = null; } if(catOff) { catOff(); catOff = null; } draw(); }
 async function out() { try { const t = localStorage.getItem("mbolo_fcm_" + S.uid); if (t) { await update(ref(db, "users/" + S.uid), { fcmToken: null }); localStorage.removeItem("mbolo_fcm_" + S.uid); } } catch (e) { } FB.signOut(auth); }
 
-// Render
 async function draw() {
   nav(); const v=$("#v");
   try {
@@ -209,10 +191,9 @@ async function draw() {
     
     v.innerHTML = ban + await ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
     if (tab === "tun" && openT) { const c = $("#cm"); if (c) c.onkeydown = e => { if (e.key === "Enter") snd(); }; renderMsgs(); }
-  } catch (e) { console.error(e); v.innerHTML = `<div class="k" style="color:red">⚠️ Erreur de chargement. <button onclick="location.reload()">Recharger</button></div>`; }
+  } catch (e) { console.error(e); v.innerHTML = `<div class="k" style="color:red">⚠️ Erreur. <button onclick="location.reload()">Recharger</button></div>`; }
 }
 
-// Auth & Profil
 const setMode = m => { mode = m; amsg = ""; draw(); };
 function fAuth() {
   const L = mode === "login";
@@ -271,14 +252,12 @@ async function initUser(u) {
   listen(query(ref(db, "marketplace"), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
   listen(ref(db, "directory"), s => { S.dir = toArr(s); soft("contact"); });
   if (S.admin) { listen(ref(db, "recharges"), s => { A.rech = s.val() || {}; soft("adm"); }); listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); }); }
-  if (S.admin || S.mod) listen(ref(db, "reports"), s => { A.rep = s.val() || {}; soft("adm"); });
   
   draw();
   if (notifState() === "granted") saveToken(true); else armAutoPrompt();
 }
 FB.onAuthStateChanged(auth, u => { ready = true; if (u) { S.uid = u.uid; draw(); initUser(u); } else { clearL(); S = fresh(); draw(); } });
 
-// Feed & Posts
 const setF = f => { feedF = f; draw(); };
 const badge = c => c === "edu" ? '<span class="bd">📚 Éducation</span>' : c === "com" ? '<span class="bd c">🛍️ Commerce</span>' : c === "ann" ? '<span class="bd a">📢 Officiel</span>' : c === "local" ? '<span class="bd">📍 Vie locale</span>' : c === "culture" ? '<span class="bd">🥁 Culture</span>' : c === "business" ? '<span class="bd">💼 Business</span>' : c === "sport" ? '<span class="bd">⚽ Sport</span>' : "";
 
@@ -326,11 +305,10 @@ async function pub() {
     const d = { a: S.uid, n: S.name, av: S.avatar, x, cat: $("#pcat").value, ts: Date.now() }; 
     if (f) { const u = await upImg(f); if (u) d.thumb = u; } 
     await push(ref(db, "posts"), d); toast("Publié !"); 
-  } catch (e) { toast("Erreur de publication"); } finally { draw(); }
+  } catch (e) { toast("Erreur"); } finally { draw(); }
 }
 async function delPost(id) { if (confirm("Supprimer ?")) try { await remove(ref(db, "posts/" + id)); } catch (e) { toast("Erreur"); } }
 
-// Profil
 async function updateProfile() {
   const n = $("#pn").value.trim(), bio = $("#pbio").value.trim(), age = $("#page").value, addr = $("#paddr").value.trim(), f = $("#pavimg").files[0];
   if (!n || n.length < 2) return toast("Nom invalide");
@@ -340,6 +318,7 @@ async function updateProfile() {
 }
 
 function fContact() {
+  const me = S.dir.find(d => d.id === S.uid) || {};
   return `<div class="k">
     <h3>👤 Mon Profil</h3>
     <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px">
@@ -352,22 +331,282 @@ function fContact() {
     <button onclick="updateProfile()" style="width:100%;margin-top:10px">Enregistrer</button>
   </div>
   <div class="k">
-    <h3>📇 Annuaire</h3>
-    <input id="dn" maxlength="40" placeholder="Boutique / Service" value="${esc(S.dir.find(d => d.id === S.uid)?.n || '')}">
-    <input id="dq" placeholder="Quartier" value="${esc(S.dir.find(d => d.id === S.uid)?.qu || '')}">
-    <input id="dw" type="tel" placeholder="WhatsApp" value="${esc(S.dir.find(d => d.id === S.uid)?.wa || '')}">
-    <label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto" ${S.dir.some(d => d.id === S.uid) ? "checked" : ""}> Visible publiquement</label>
+    <h3>📇 Carte Publique</h3>
+    <input id="dn" maxlength="40" placeholder="Matière / Boutique" value="${esc(me.n || '')}">
+    <select id="dc">
+      <option value="edu" ${me.cat === "edu" ? "selected" : ""}>📚 Enseignant</option>
+      <option value="com" ${me.cat === "com" ? "selected" : ""}>🛍️ Commerçant</option>
+      <option value="srv" ${me.cat === "srv" ? "selected" : ""}>🛠️ Service</option>
+    </select>
+    <input id="dq" placeholder="Quartier" value="${esc(me.qu || '')}">
+    <input id="dw" type="tel" placeholder="WhatsApp" value="${esc(me.wa || '')}">
+    <label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto" ${me.id ? "checked" : ""}> Visible publiquement</label>
     <button onclick="regDir()" style="width:100%">Publier</button>
-  </div>`;
+  </div>
+  <h3>🔍 Annuaire</h3>
+  <input placeholder="Rechercher (ex: Prof, Maths…)" oninput="dirSearch=this.value.toLowerCase();draw()" value="${esc(dirSearch)}">
+  ${S.dir.filter(d => !dirSearch || (d.n || "").toLowerCase().includes(dirSearch) || (d.qu || "").toLowerCase().includes(dirSearch)).map(c => `<div class="k" style="display:flex;justify-content:space-between;align-items:center;padding:15px"><div><b>${esc(c.n)}</b> ${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small></div><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px 12px">💬</button></a></div>`).join("")}
+  `;
 }
 async function regDir() { 
   const n = $("#dn").value.trim(), wa = $("#dw").value.replace(/\D/g, ""); 
   if (n.length < 2 || wa.length < 8) return toast("Champs invalides"); 
   if (!$("#dk").checked) { await remove(ref(db, "directory/" + S.uid)); toast("Retiré"); return draw(); }
-  try { await set(ref(db, "directory/" + S.uid), { n, cat: "com", qu: $("#dq").value.trim(), wa, ok: true, ts: Date.now() }); toast("Publié !"); draw(); } catch (e) { toast("Erreur"); } 
+  try { await set(ref(db, "directory/" + S.uid), { n, cat: $("#dc").value, qu: $("#dq").value.trim(), wa, ok: true, ts: Date.now() }); toast("Publié !"); draw(); } catch (e) { toast("Erreur"); } 
 }
 
-// Wallet
+// ==========================================
+// RÉSEAUX, MONÉTISATION ET ABONNEMENTS
+// ==========================================
+const saveTun = () => localStorage.setItem("mbolo_tun_" + S.uid, JSON.stringify(S.tun));
+const TID = /^(CLS|BQT)-[A-Z0-9]{4}$/;
+
+function fTun() {
+  if (openT) return chat();
+  
+  const box = (t, c, lab) => `
+    <div class="k" style="border-left:4px solid ${c}">
+      <h3>${lab}</h3>
+      <input id="tn_${t}" placeholder="Nom de l'espace">
+      <input id="tp_${t}" type="password" placeholder="Clé d'accès (Mot de passe)">
+      <input id="tprice_${t}" type="number" placeholder="Prix d'abonnement en KC (0 = Gratuit)">
+      <button onclick="mkT('${t}')" style="width:100%;background:${c}">Créer et fixer mon tarif</button>
+      <small class="m" style="display:block;margin-top:5px">Vos revenus seront virés sur votre solde global.</small>
+    </div>`;
+  
+  return `<h3>Créer un Espace Privé</h3>` + 
+    box("edu", "#0d47a1", "📚 Ouvrir une classe (Prof)") + 
+    box("com", "#1b5e20", "🛍️ Ouvrir une boutique (Commerçant)") +
+    
+    `<div class="k" style="margin-top:20px"><h3>🔑 Rejoindre</h3>
+     <p class="m" style="margin-bottom:10px">Entrez l'ID fourni par le professeur ou le commerçant.</p>
+     <input id="ti" placeholder="ID (ex. CLS-AB12)"><input id="tq" type="password" placeholder="Clé secrète">
+     <button onclick="joinT()" style="width:100%">Rejoindre</button>
+    </div>
+    
+    <h3 style="margin-top:20px">Mes Espaces</h3>` +
+    (Object.entries(S.tun).map(([i, t]) => `
+      <div class="k" onclick="op('${i}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+        <div><b>${t.type === "com" ? "🛍️" : "📚"} ${esc(t.n)}</b><br><small>ID : ${esc(i)}</small></div>
+        <span style="font-size:20px;color:var(--m)">›</span>
+      </div>`).join("") || "<p class='m'>Tu n'as rejoint aucun espace.</p>");
+}
+
+async function mkT(type) {
+  const n = $("#tn_" + type).value.trim(), p = $("#tp_" + type).value; 
+  let price = parseInt($("#tprice_" + type).value);
+  if (!n || !p || isNaN(price) || price < 0) return toast("Champs invalides");
+  
+  const i = (type === "edu" ? "CLS-" : "BQT-") + genCode().slice(0, 4);
+  
+  load(true);
+  try {
+    await set(ref(db, `tunnels/${i}/meta`), { name: n, type, owner: S.uid, price, ts: Date.now() });
+    S.tun[i] = { n, type, price }; saveTun(); TK[i] = await tk(i, p); 
+    toast("Espace créé ! ID : " + i); op(i);
+  } catch(e) { toast("Erreur de création"); }
+  finally { load(false); }
+}
+
+async function joinT() {
+  const i = $("#ti").value.trim().toUpperCase(), p = $("#tq").value;
+  if (!TID.test(i) || !p) return toast("ID ou clé invalide");
+  
+  load(true);
+  try {
+    const meta = (await get(ref(db, `tunnels/${i}/meta`))).val();
+    if(!meta) throw new Error("Cet espace n'existe pas.");
+    
+    if (!S.tun[i]) { S.tun[i] = { n: meta.name, type: meta.type, price: meta.price }; saveTun(); }
+    TK[i] = await tk(i, p); 
+    op(i);
+  } catch(e) { toast(e.message || "Erreur"); }
+  finally { load(false); }
+}
+
+async function op(i) {
+  if (!TK[i]) { 
+    const p = prompt("Clé secrète de l'espace"); 
+    if (!p) return; 
+    TK[i] = await tk(i, p); 
+  }
+  openT = i; S.msgs = []; if (tunOff) tunOff(); if (catOff) catOff();
+  
+  const meta = (await get(ref(db, `tunnels/${i}/meta`))).val();
+  currentTunMeta = meta;
+  
+  tunOff = onValue(ref(db, `tunnels/${i}/subscribers`), s => {
+     currentSubs = s.val() || {};
+     draw();
+  });
+
+  onValue(query(ref(db, `tunnels/${i}/messages`), limitToLast(50)), s => {
+    const oldCount = S.msgs.length; S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
+    const last = S.msgs[S.msgs.length - 1];
+    if (last && S.msgs.length > oldCount && oldCount > 0 && last.n !== S.name && document.hidden) { 
+      dec(TK[i], last.c).then(t => { if (t) notifyUser("Nouveau message", last.n + " : " + t.slice(0, 50)); }); 
+    }
+    renderMsgs();
+  });
+  
+  if (meta && meta.type === 'com') {
+    catOff = onValue(ref(db, `tunnels/${i}/catalog`), s => {
+       const items = toArr(s).sort((a,b) => b.ts - a.ts);
+       const catDiv = $("#catalog-container");
+       if(catDiv) catDiv.innerHTML = renderCatalog(items);
+    });
+  }
+  
+  draw();
+}
+
+function renderCatalog(items) {
+  return `
+    <div style="margin-bottom:15px">
+      <div class="row"><h3 style="margin:0">🛍️ Catalogue Privé</h3></div>
+      ${items.map(item => `
+        <div class="catalog-item">
+          ${item.img ? `<img src="${esc(item.img)}">` : ''}
+          <div style="flex:1">
+            <b>${esc(item.n)}</b><br>
+            <small style="color:var(--g);font-weight:bold">${kc(item.p)}</small>
+          </div>
+          <button onclick="buyCatalog('${item.n}', ${item.p})" style="padding:8px 12px;font-size:12px">Acheter</button>
+        </div>
+      `).join("") || "<p class='m'>Aucun article.</p>"}
+      
+      ${currentTunMeta && currentTunMeta.owner === S.uid ? `
+      <div class="k" style="margin-top:10px;padding:15px;background:var(--bg)">
+        <details>
+          <summary style="font-weight:bold;cursor:pointer;font-size:14px">➕ Ajouter un article (Propriétaire)</summary>
+          <input id="cn" placeholder="Nom de l'article">
+          <input id="cp" type="number" placeholder="Prix en KC">
+          <input type="file" id="cimg" accept="image/*" style="padding:8px;font-size:12px">
+          <button onclick="addCatalogItem()" style="width:100%;margin-top:5px">Publier</button>
+        </details>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+async function addCatalogItem() {
+  const n = $("#cn").value.trim(), p = parseFloat($("#cp").value), f = $("#cimg").files[0];
+  if (!n || !(p >= 1)) return toast("Nom et prix valides requis");
+  load(true);
+  try {
+    const d = { n, p: Math.round(p * 10), ts: Date.now() };
+    if (f) { const u = await upImg(f); if (u) d.img = u; }
+    await push(ref(db, `tunnels/${openT}/catalog`), d);
+    toast("Article ajouté !");
+  } catch(e) { toast("Erreur (Vous n'êtes pas le propriétaire)"); }
+  finally { load(false); }
+}
+
+async function buyCatalog(name, price) {
+  if (price > S.bal) return toast("Solde insuffisant.");
+  if (!confirm(`Demander l'achat de "${name}" pour ${kc(price)} au commerçant ?`)) return;
+  try {
+    const txt = `[ACHAT] Je souhaite acheter "${name}" pour ${kc(price)}.`;
+    await push(ref(db, `tunnels/${openT}/messages`), { ts: Date.now(), n: S.name, c: await enc(TK[openT], txt) });
+    toast("Message d'achat envoyé !");
+  } catch(e) { toast("Erreur"); }
+}
+
+async function subscribeToTunnel() {
+  if (!currentTunMeta || currentTunMeta.price === 0) return;
+  if (S.bal < currentTunMeta.price) return toast("Solde insuffisant pour vous abonner.");
+  if (!confirm(`S'abonner à cet espace pour ${kc(currentTunMeta.price)} ?`)) return;
+  
+  load(true);
+  try {
+    // L'admin valide manuellement, le script auto_validate.js fait le reste
+    const ownerCode = (await get(ref(db, `users/${currentTunMeta.owner}/code`))).val();
+    await push(ref(db, "transfer_requests"), { 
+       t: "sub", 
+       f: S.uid, 
+       fn: S.name, 
+       to: ownerCode, 
+       a: currentTunMeta.price, 
+       m: "Abonnement " + openT, 
+       s: "p", 
+       ts: Date.now() 
+    });
+    toast("Demande d'abonnement envoyée à l'admin !");
+  } catch(e) { toast("Erreur"); }
+  finally { load(false); }
+}
+
+function chat() {
+  const t = S.tun[openT] || { n: "Espace", type: "edu", price: 0 };
+  const isOwner = currentTunMeta && currentTunMeta.owner === S.uid;
+  const isSub = isOwner || (t.price === 0) || (currentSubs && currentSubs[S.uid]);
+  
+  return `<div class="k" style="height:75vh;display:flex;flex-direction:column;padding:12px">
+    <div class="row" style="margin-bottom:10px">
+      <button class="s" onclick="go('tun')">← Retour</button>
+      <b>${esc(t.n)}</b>
+      <a href="https://wa.me/?text=${encodeURIComponent("Rejoins " + t.n + " sur Mbolo. ID : " + openT)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px">Inviter</button></a>
+    </div>
+    
+    ${!isSub ? `
+      <div class="k" style="background:var(--y);color:#222;text-align:center;padding:15px">
+         <b>🔒 Accès restreint</b><br>
+         <p style="margin:5px 0;font-size:14px">Abonnez-vous pour interagir et recevoir les privilèges.</p>
+         <b>${kc(t.price)}</b>
+         <button onclick="subscribeToTunnel()" style="background:#222;color:#fff;width:100%;margin-top:10px">S'abonner via l'Admin</button>
+      </div>
+    ` : ''}
+    
+    ${t.type === 'com' ? `<div id="catalog-container" style="max-height:30vh;overflow-y:auto;padding-bottom:10px;border-bottom:1px solid var(--l);margin-bottom:10px"></div>` : ''}
+    
+    <div id="cb" style="flex:1;overflow-y:auto;background:var(--bg);border-radius:10px;padding:10px"></div>
+    
+    <div class="row" style="margin-top:10px">
+      ${isSub ? `
+        <input id="cm" placeholder="Écrire un message chiffré..." style="margin:0">
+        <button onclick="snd()" style="margin:0;padding:10px 15px">➤</button>
+      ` : `
+        <input placeholder="Abonnez-vous pour écrire..." disabled style="margin:0;text-align:center">
+      `}
+    </div>
+  </div>`;
+}
+
+async function renderMsgs() {
+  const b = $("#cb"); if (!b || !openT) return; const h = [];
+  for (const m of S.msgs) { 
+    const t = await dec(TK[openT], m.c), me = m.n === S.name; 
+    h.push(`<div style="margin-bottom:12px;text-align:${me ? "right" : "left"}">
+      <small style="color:var(--m)">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}</small><br>
+      <span style="display:inline-block;padding:10px 14px;border-radius:16px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--c)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "🔒 Message chiffré" : esc(t)}</span>
+    </div>`); 
+  }
+  b.innerHTML = h.join("") || "<p class='m' style='text-align:center'>Début de la conversation.</p>"; 
+  b.scrollTop = b.scrollHeight;
+}
+
+async function snd() { 
+  const i = $("#cm"), t = i.value.trim(); 
+  if (!t || !TK[openT]) return; 
+  i.value = ""; 
+  try { await push(ref(db, `tunnels/${openT}/messages`), { ts: Date.now(), n: S.name, c: await enc(TK[openT], t) }); } catch (e) { toast("Refusé (Abonnement manquant ?)"); } 
+}
+
+// --------------------------------------------------------
+
+function fMk() {
+  return `<div class="k" style="border-left:4px solid var(--g)"><h3>Vendre un article (Public)</h3><input id="mt" maxlength="60" placeholder="Titre"><input id="mp" type="number" placeholder="Prix KC (min 5)"><textarea id="md" rows="2" maxlength="500" placeholder="Description…"></textarea><input type="file" id="mimg" accept="image/*" style="padding:8px"><button id="mb" onclick="sell()" style="width:100%">Publier</button></div>` +
+  (S.mk.sort((a, b) => b.ts - a.ts).map(l => `<div class="k" style="padding:0;overflow:hidden">${img(l.thumb)}<div style="padding:16px"><div class="row"><b>${esc(l.t)}</b><b style="color:var(--g);font-size:18px">${kc(l.d)}</b></div><small>Vendeur : ${esc(l.n)}</small><p style="margin:8px 0">${esc(l.x)}</p><div class="row">${l.a === S.uid ? '<small class="m">Ton annonce</small>' : `<button onclick="buy('${l.id}')" style="width:100%">Acheter</button>`}${l.a === S.uid || S.admin || S.mod ? `<button class="l" onclick="delMk('${l.id}')">🗑️</button>` : ""}</div></div></div>`).join("") || "<p class='m' style='text-align:center'>Aucune annonce.</p>");
+}
+async function sell() {
+  const t = $("#mt").value.trim(), p = parseFloat($("#mp").value), f = $("#mimg").files[0]; if (t.length < 3 || !(p >= 5)) return toast("Invalide");
+  $("#mb").disabled = true;
+  try { const d = { a: S.uid, n: S.name, t, d: Math.round(p * 10), x: $("#md").value.trim(), ts: Date.now() }; if (f) { const u = await upImg(f); if (u) d.thumb = u; } await push(ref(db, "marketplace"), d); toast("Publié !"); } catch (e) { toast("Refusé"); }
+  draw();
+}
+async function delMk(id) { if (confirm("Retirer ?")) try { await remove(ref(db, "marketplace/" + id)); } catch (e) { toast("Refusé"); } }
+async function buy(id) { const l = S.mk.find(m => m.id === id); if (!l) return; if (S.freeze) return toast("Suspendu"); if (l.d > S.bal) return toast("Solde insuffisant"); if (!confirm(`Acheter pour ${kc(l.d)} ?`)) return; try { const to = (await get(ref(db, "users/" + l.a + "/code"))).val(); await push(ref(db, "transfer_requests"), { t: "tr", f: S.uid, fn: S.name, to, a: l.d, m: ("Achat: " + l.t).slice(0, 100), s: "p", ts: Date.now() }); toast("Demandé !"); } catch (e) { toast("Refusé"); } }
+
 function fW() {
   const fz = S.freeze ? " disabled" : "";
   const histHtml = S.hist.length ? S.hist.map(h => `<div style="border-bottom:1px solid var(--l);padding:10px 0"><div class="row"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${h.a > 0 ? "var(--g)" : "var(--d)"};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div></div>`).join("") : "<p class='m'>Aucune transaction.</p>";
@@ -384,23 +623,23 @@ function fW() {
 }
 async function readNotif(id) { try { await remove(ref(db, "inbox/" + S.uid + "/" + id)); } catch (e) { } }
 async function send(path, d, msg) { if (S.freeze) return toast("Suspendu"); try { await push(ref(db, path), d); toast(msg); draw(); } catch (e) { toast("Erreur"); } }
-function reqRech() { const a = parseInt($("#ra").value); if (!(a >= 500)) return toast("Min 500 FCFA"); send("recharges", { uid: S.uid, name: S.name, amountFCFA: a, amountKC: a / 10, status: "pending", ts: Date.now() }, "Déclaré."); }
-function reqTr() { const to = $("#wt").value.trim().toUpperCase(), a = Math.round(parseFloat($("#wd").value) * 10); if (!/^[A-Z0-9]{6}$/.test(to) || to === S.code) return toast("Code invalide"); if (!(a >= 1) || a > S.bal) return toast("Solde insuffisant"); send("transfer_requests", { t: "tr", f: S.uid, fn: S.name, to, a, m: "Transfert", s: "p", ts: Date.now() }, "Demandé."); }
+function reqRech() { const a = parseInt($("#ra").value); if (!(a >= 500)) return toast("Min 500"); send("recharges", { uid: S.uid, name: S.name, amountFCFA: a, amountKC: a / 10, status: "pending", ts: Date.now() }, "Déclaré."); }
+function reqTr() { const to = $("#wt").value.trim().toUpperCase(), a = Math.round(parseFloat($("#wd").value) * 10); if (!/^[A-Z0-9]{6}$/.test(to) || to === S.code) return toast("Code invalide"); if (!(a >= 1) || a > S.bal) return toast("Fonds insuffisants"); send("transfer_requests", { t: "tr", f: S.uid, fn: S.name, to, a, m: "Transfert", s: "p", ts: Date.now() }, "Demandé."); }
 function reqWd() { const a = Math.round(parseFloat($("#xk").value) * 10), n = $("#xn").value.trim(); if (!(a >= 50) || a > S.bal) return toast("Min 5 KC"); if (n.length < 8) return toast("Numéro invalide"); send("transfer_requests", { t: "wd", f: S.uid, fn: S.name, a, m: n, s: "p", ts: Date.now() }, "Demandé."); }
-async function delAcc() { if (S.bal > 0) return toast("Videz votre solde."); if (!confirm("Supprimer définitivement ?")) return; try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null }); await auth.currentUser.delete(); } catch (e) { toast("Erreur"); } }
+async function delAcc() { if (S.bal > 0) return toast("Videz le solde."); if (!confirm("Supprimer ?")) return; try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null }); await auth.currentUser.delete(); } catch (e) { toast("Erreur"); } }
 
-// Marketplace & Groupes (Simplifiés pour la réponse)
-function fMk() { return `<div class="k"><h3>Vendre</h3><input id="mt" placeholder="Titre"><input id="mp" type="number" placeholder="Prix KC"><button onclick="sell()" style="width:100%">Publier</button></div>` + (S.mk.map(l => `<div class="k"><b>${esc(l.t)}</b> - ${kc(l.d)}<br><small>${esc(l.n)}</small><button onclick="buy('${l.id}')" style="width:100%;margin-top:10px">Acheter</button></div>`).join("") || "<p class='m'>Vide.</p>"); }
-async function sell() { const t = $("#mt").value.trim(), p = parseFloat($("#mp").value); if (!t || !(p >= 5)) return toast("Invalide"); try { await push(ref(db, "marketplace"), { a: S.uid, n: S.name, t, d: Math.round(p * 10), ts: Date.now() }); draw(); } catch (e) { toast("Erreur"); } }
-async function buy(id) { const l = S.mk.find(m => m.id === id); if (l.d > S.bal) return toast("Fonds insuffisants"); toast("Fonctionnalité en cours de validation"); }
+function fAdm() { 
+  const subs = Object.entries(A.tr).filter(([k,r]) => r.t === 'sub' && r.s === 'p');
+  const rech = Object.entries(A.rech).filter(([k,r]) => r.status === 'pending');
+  
+  return `<div class="k"><h3>Admin</h3>
+    <p><b>Recharges :</b> ${rech.length}</p>
+    <p><b>Abonnements en attente :</b> ${subs.length}</p>
+    <p class="m">Le script Node.js gère les validations automatiquement toutes les X minutes.</p>
+  </div>`;
+}
 
-function fTun() { return `<div class="k"><h3>Groupes</h3><p class="m">Fonctionnalité disponible prochainement.</p></div>`; }
-
-// Admin (Raccourci pour la réponse)
-function fAdm() { return `<div class="k"><h3>Admin</h3><p>Recharges en attente : ${Object.keys(A.rech).length}</p></div>`; }
-const guard = async f => { try { await f(); } catch (e) { toast("Erreur"); } };
-
-Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, updateProfile, regDir, reqRech, reqTr, reqWd, readNotif, delAcc, enableNotifs, laterNotif });
+Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, updateProfile, regDir, reqRech, reqTr, reqWd, readNotif, delAcc, enableNotifs, laterNotif, mkT, joinT, op, snd, addCatalogItem, buyCatalog, subscribeToTunnel });
 draw();
 </script>
 </body></html>
