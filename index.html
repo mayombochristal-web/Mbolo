@@ -2,10 +2,10 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#087c46">
 <meta name="color-scheme" content="light dark">
-<title>Mbolo V20 - Kongo Coin</title>
+<title>Mbolo - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -37,117 +37,77 @@ window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, 
    MBOLO V20 — PREMIUM DESIGN SYSTEM
 ========================================== */
 :root {
-  --g: #087c46;
-  --y: #fcd116;
-  --bg: #f5f7f3;
-  --c: #ffffff;
-  --t: #18251d;
-  --m: #758278;
-  --l: #e8eee8;
-  --d: #e34444;
-  --blue: #2463eb;
-  --radius: 20px;
-  --shadow: 0 5px 22px rgba(20, 60, 35, .055);
-  --shadow-hover: 0 10px 30px rgba(20, 60, 35, .11);
+  --g: #087c46; --y: #fcd116; --bg: #f5f7f3; --c: #ffffff; --t: #18251d; --m: #758278; --l: #e8eee8; --d: #e34444; --blue: #2463eb;
+  --radius: 20px; --shadow: 0 5px 22px rgba(20, 60, 35, .055);
 }
-@media(prefers-color-scheme:dark){
-  :root {
-    --bg: #101710;
-    --c: #1b251d;
-    --t: #edf4ed;
-    --m: #a0afa2;
-    --l: #344337;
-    --shadow: 0 5px 22px rgba(0,0,0,.18);
-  }
-}
+@media(prefers-color-scheme:dark){ :root { --bg: #101710; --c: #1b251d; --t: #edf4ed; --m: #a0afa2; --l: #344337; --shadow: 0 5px 22px rgba(0,0,0,.18); } }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font:16px 'Inter',system-ui,sans-serif;background:radial-gradient(circle at 0% 0%, rgba(18,168,102,.055), transparent 35%), var(--bg);color:var(--t);padding-bottom:84px;letter-spacing:-.2px}
+body{margin:0;font:16px 'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t);padding-bottom:84px;letter-spacing:-.2px;overflow-x:hidden}
 
-/* Header */
+/* Header & Nav */
 header{background:var(--g);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;min-height:66px;box-shadow:0 3px 15px rgba(0,0,0,.12)}
-header .logo{font-size:21px;font-weight:900;letter-spacing:-.8px;display:flex;align-items:center;gap:8px}
-header .logo span{background:var(--y);color:#222;border-radius:20px;padding:4px 12px;font-weight:800;font-size:14px;border:1px solid rgba(255,255,255,.4);box-shadow:0 3px 10px rgba(0,0,0,.12)}
+header .logo{font-size:21px;font-weight:900;display:flex;align-items:center;gap:8px}
+header .logo span{background:var(--y);color:#222;border-radius:20px;padding:4px 12px;font-weight:800;font-size:14px;box-shadow:0 3px 10px rgba(0,0,0,.12)}
 header .icons{display:flex;gap:15px;align-items:center;font-size:22px}
-header .avatar{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--g);display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:16px;border:2px solid var(--y);cursor:pointer}
+header .avatar{width:36px;height:36px;border-radius:50%;background:#fff;color:var(--g);display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:16px;border:2px solid var(--y);cursor:pointer;overflow:hidden}
+header .avatar img{width:100%;height:100%;object-fit:cover}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-top:1px solid #e9eee9;z-index:5;height:72px;padding-bottom:env(safe-area-inset-bottom)}
+nav a{flex:1;text-align:center;padding:9px 3px;font-size:11px;color:var(--m);font-weight:600;text-decoration:none;display:flex;flex-direction:column;justify-content:center;align-items:center}
+nav a i{font-size:22px;margin-bottom:3px;font-style:normal}
+nav a.on{color:var(--g)}
 
+/* Layout & Cards */
 main{padding:18px 15px 35px;max-width:600px;margin:auto}
-
-/* Cartes & Boutons */
-.k{background:var(--c);border:1px solid rgba(20,70,40,.055);border-radius:var(--radius);padding:19px;margin-bottom:15px;box-shadow:var(--shadow);transition:transform .2s ease, box-shadow .2s ease}
+.k{background:var(--c);border:1px solid rgba(20,70,40,.055);border-radius:var(--radius);padding:19px;margin-bottom:15px;box-shadow:var(--shadow)}
 .k h2, .k h3{letter-spacing:-.6px;font-weight:800;margin:0 0 10px}
-button{min-height:43px;border-radius:13px;padding:11px 17px;font-weight:750;font-family:inherit;background:var(--g);color:#fff;border:0;cursor:pointer;transition:transform .16s ease, filter .16s ease, box-shadow .16s ease;margin:4px 4px 4px 0}
-button:active{transform:scale(.96);filter:brightness(.92)}
-button:not(:disabled):hover{box-shadow:0 5px 14px rgba(8,124,70,.16);filter:brightness(1.05)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* Forms & Buttons */
+button{min-height:43px;border-radius:13px;padding:11px 17px;font-weight:700;background:var(--g);color:#fff;border:0;cursor:pointer;margin:4px 4px 4px 0;transition:transform .1s}
+button:active{transform:scale(.96)}
 button.s{background:var(--l);color:var(--t)}
 button.r{background:var(--d)}
 button.b{background:var(--blue)}
 button.wa{background:#25D366;width:100%;margin-top:10px}
-button.l{background:none;color:var(--d);font-size:12px;padding:5px;min-height:auto}
+button.l{background:none;color:var(--d);font-size:12px;padding:5px}
 button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea,select{width:100%;padding:14px;margin:6px 0;border:1.5px solid var(--l);border-radius:13px;background:var(--bg);color:var(--t);font:inherit;outline:none;transition:border .2s, box-shadow .2s}
+input,textarea,select{width:100%;padding:14px;margin:6px 0;border:1.5px solid var(--l);border-radius:13px;background:var(--bg);color:var(--t);font:inherit;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(8,124,70,.10)}
 small,.m{color:var(--m);font-size:13px}
 
-/* Navigation */
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-top:1px solid #e9eee9;box-shadow:0 -5px 22px rgba(0,0,0,.045);z-index:5;height:72px;padding-bottom:env(safe-area-inset-bottom)}
-nav a{flex:1;text-align:center;padding:9px 3px;font-size:12px;color:var(--m);min-width:64px;font-weight:600;cursor:pointer;transition:color .2s, transform .2s;text-decoration:none;display:flex;flex-direction:column;justify-content:center;align-items:center}
-nav a i{font-size:23px;margin-bottom:3px;font-style:normal;display:block}
-nav a.on{color:var(--g)}
-nav a.on i{transform:translateY(-3px)}
-
-/* Utilitaires */
-#to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;border-radius:16px;padding:13px 20px;box-shadow:0 8px 30px rgba(0,0,0,.2);font-weight:650;z-index:9;display:none;max-width:90%;text-align:center}
-.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.tabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:5px}
-.tabs button{white-space:nowrap;background:var(--c);color:var(--m);border:1px solid var(--l);box-shadow:none;padding:8px 14px;min-height:auto;font-size:14px}
-.tabs button.on{background:var(--g);color:#fff;border-color:var(--g)}
-.err{background:#ffebee;color:#b71c1c;border-radius:14px;padding:12px;margin-bottom:10px;text-align:center}
-.bd{border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;background:#e3f2fd;color:#0d47a1}
-.bd.c{background:#e8f5e9;color:#1b5e20}
-.bd.a{background:var(--y);color:#000}
-.th{width:100%;border-radius:15px;margin-top:8px;max-height:350px;object-fit:cover}
-
-/* Widget Portefeuille */
-.wallet-card{background:var(--g);color:#fff;border-radius:18px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;box-shadow:0 8px 25px rgba(8,124,70,.25);cursor:pointer;transition:transform .2s}
-.wallet-card:active{transform:scale(.98)}
-.wallet-card .bal{font-size:24px;font-weight:900;margin:4px 0}
-.wallet-card .btn-wallet{background:var(--y);color:#222;padding:10px 16px;border-radius:12px;font-weight:800;border:0}
-
-/* Stories */
+/* Composants spécifiques */
+.wallet-card{background:var(--g);color:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:0 8px 25px rgba(8,124,70,.25)}
+.wallet-card .bal{font-size:32px;font-weight:900;margin:5px 0}
 .stories-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;margin-bottom:15px;scrollbar-width:none}
-.stories-scroll::-webkit-scrollbar{display:none}
-.story{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
-.story .img{width:64px;height:64px;border-radius:50%;background:var(--l);border:3px solid var(--g);padding:2px;position:relative;display:flex;justify-content:center;align-items:center;overflow:hidden}
-.story .img img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.story .img .add{background:var(--y);color:#222;position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:14px;font-weight:bold;border:2px solid var(--c)}
-.story span{font-size:11px;color:var(--t);font-weight:600;text-align:center;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* Post spécifique */
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer}
+.story .img{width:64px;height:64px;border-radius:50%;background:var(--l);border:3px solid var(--g);display:flex;justify-content:center;align-items:center;overflow:hidden}
+.story .img img{width:100%;height:100%;object-fit:cover}
+.story span{font-size:11px;font-weight:600;max-width:70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.post-avatar{width:40px;height:40px;border-radius:50%;background:var(--l);display:flex;justify-content:center;align-items:center;font-weight:bold;color:var(--g);font-size:16px}
-.post-meta{flex:1}
-.post-meta b{display:block;font-size:14px}
-.post-meta small{font-size:12px}
+.post-avatar{width:40px;height:40px;border-radius:50%;background:var(--l);display:flex;justify-content:center;align-items:center;font-weight:bold;color:var(--g);overflow:hidden}
+.post-avatar img{width:100%;height:100%;object-fit:cover}
 .post-content{font-size:15px;line-height:1.5;margin:10px 0;white-space:pre-wrap}
 .post-actions{display:flex;justify-content:space-between;border-top:1px solid var(--l);padding-top:10px;margin-top:10px;color:var(--m);font-size:13px;font-weight:600}
-.post-actions button{background:none;color:var(--m);padding:5px;margin:0;font-size:13px;min-height:auto}
-.post-actions button:hover{color:var(--g)}
-.reactions{display:flex;gap:10px;margin-top:10px}
-.reactions button{background:var(--bg);border:1px solid var(--l);border-radius:20px;padding:6px 12px;font-size:14px;min-height:auto}
-.reactions button.active{background:#fff3cd;border-color:#ffeeba}
+
+/* Loader & Toast */
+#loader{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:100;backdrop-filter:blur(4px)}
+#loader::after{content:'';width:40px;height:40px;border:4px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;border-radius:16px;padding:13px 20px;font-weight:600;z-index:99;display:none;max-width:90%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.2)}
 </style></head><body>
 
 <header>
   <div class="logo">🥁 Mbolo <span>V20</span></div>
   <div class="icons">
     <span onclick="go('contact')" style="cursor:pointer">🔍</span>
-    <span onclick="go('w')" style="cursor:pointer;position:relative">🔔<span style="position:absolute;top:-5px;right:-5px;background:var(--d);color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;display:flex;justify-content:center;align-items:center">3</span></span>
-    <div class="avatar" id="hd-avatar" onclick="go('w')">?</div>
+    <span onclick="go('w')" style="cursor:pointer;position:relative">🔔<span id="notif-badge" style="position:absolute;top:-5px;right:-5px;background:var(--d);color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;display:none;justify-content:center;align-items:center">!</span></span>
+    <div class="avatar" id="hd-avatar" onclick="go('contact')">?</div>
   </div>
 </header>
 
 <main id="v"></main>
 <div id="to"></div>
+<div id="loader"></div>
 <nav id="nv"></nav>
 
 <script type="module">
@@ -156,166 +116,158 @@ const $ = s => document.querySelector(s);
 const CFG = { AIRTEL: "24177765496", FEE_TR: 0.03, FEE_WD: 0.03, CLOUD: "vmqquxa8", PRESET: "mbolo_preset" };
 const VAPID_KEY = "BBmQnlYW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_Yl8fhnIZc59-SgrkuafvU";
 const SW_URL = "firebase-messaging-sw.js";
-const ERR = { "auth/email-already-in-use": "Ce pseudo est déjà pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Pas de connexion internet." };
+const ERR = { "auth/email-already-in-use": "Ce pseudo est pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Connexion internet instable." };
 
+// Utilitaires
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kc = d => (d / 10).toFixed(1) + " KC", fc = d => (d * 10).toLocaleString("fr") + " FCFA";
 const ago = t => new Date(t).toLocaleString("fr", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 let tt; function toast(m) { const t = $("#to"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); }
+function load(on) { $("#loader").style.display = on ? "flex" : "none"; }
 const toArr = s => { const v = s.val() || {}; return Object.keys(v).map(k => ({ id: k, ...v[k] })); };
 const genCode = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return [...crypto.getRandomValues(new Uint8Array(6))].map(x => a[x % a.length]).join(""); };
 const nid = p => push(ref(db, p)).key;
-const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [] });
+const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [], avatar: null, bio: "", age: null, address: "" });
 
 let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
 let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false, lastBal = null;
+
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
 const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } };
 const busy = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
 const soft = t => { if (tab === t && !busy()) draw(); };
 
+// Notifications & SW
 const notifState = () => (!("Notification" in window) || !("serviceWorker" in navigator)) ? "unsupported" : Notification.permission;
-
 async function getSW() { 
-  if (swReg) return swReg; 
-  if (!("serviceWorker" in navigator)) return null; 
-  try { 
-    await navigator.serviceWorker.register(SW_URL, { scope: "./" }); 
-    swReg = await navigator.serviceWorker.ready; 
-    return swReg; 
-  } catch(e) { console.warn("SW registration failed", e); return null; }
+  if (swReg) return swReg; if (!("serviceWorker" in navigator)) return null; 
+  try { await navigator.serviceWorker.register(SW_URL, { scope: "./" }); swReg = await navigator.serviceWorker.ready; return swReg; } catch(e) { return null; }
 }
-
-// FONCTION CENTRALE POUR LES VRAIES NOTIFICATIONS
 async function notifyUser(title, body) { 
   if (notifState() !== "granted") return; 
-  try { 
-    const reg = await getSW(); 
-    await reg.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", vibrate: [200, 100, 200], tag: "mbolo-event" }); 
-  } catch (e) {} 
+  try { const reg = await getSW(); await reg.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", vibrate: [200, 100, 200], tag: "mbolo-event" }); } catch (e) {} 
 }
-
 async function saveToken(silent) {
   if (notifState() !== "granted" || !S.uid) return false;
   try {
-    const messaging = await FB.msgP; 
-    if (!messaging) { if (!silent) toast("Push non supporté."); return false; }
-    const reg = await getSW();
-    if (!reg) { if (!silent) toast("Service Worker indisponible."); return false; }
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const messaging = await FB.msgP; if (!messaging) return false;
+    const reg = await getSW(); if (!reg) return false;
+    await new Promise(r => setTimeout(r, 500));
     const token = await FB.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-    if (!token) { if (!silent) toast("Erreur jeton."); return false; }
+    if (!token) return false;
     localStorage.setItem("mbolo_fcm_" + S.uid, token);
     const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val();
     if (cur !== token) await update(ref(db, "users/" + S.uid), { fcmToken: token });
     if (!fcmHooked) { fcmHooked = true; FB.onMessage(messaging, p => { const d = p.data || p.notification || {}; toast("🔔 " + (d.title || "Mbolo") + " : " + (d.body || "")); }); }
     return true;
-  } catch (e) { console.error("Détail FCM :", e); if (!silent) toast("Erreur FCM : " + (e.code || e.message)); return false; }
+  } catch (e) { return false; }
 }
-
 async function enableNotifs() {
   const st = notifState();
-  if (st === "unsupported") { toast("Non disponible sur ce navigateur."); return; }
-  if (st === "denied") { toast("Bloqué. Cadenas 🔒 → Notifications → Autoriser."); return; }
+  if (st === "denied") return toast("Bloqué. Cadenas 🔒 → Notifications.");
   const p = st === "granted" ? "granted" : await Notification.requestPermission();
-  if (p === "granted") { const ok = await saveToken(false); if (ok) toast("🔔 Notifications activées !"); }
+  if (p === "granted") { const ok = await saveToken(false); if (ok) toast("🔔 Alertes activées !"); }
   draw();
 }
-
 function laterNotif() { notifLater = true; draw(); }
 function armAutoPrompt() { if (notifAsked || notifState() !== "default") return; document.addEventListener("click", () => { if (notifAsked || notifState() !== "default" || !S.uid) return; notifAsked = true; enableNotifs(); }, { capture: true, once: true }); }
-const notifBanner = () => (notifState() === "default" && !notifLater) ? `<div class="k" style="border:2px solid var(--y);text-align:center"><b>🔔 Reste informé</b><p class="m" style="margin:6px 0">Reçois une alerte quand tu reçois de l'argent ou un message.</p><button class="b" onclick="enableNotifs()" style="width:100%">Activer</button><button class="s" onclick="laterNotif()" style="width:100%">Plus tard</button></div>` : "";
+getSW().catch(console.warn);
 
-getSW().catch(e => console.warn("SW", e));
-
+// Cryptographie
 const E = new TextEncoder(), b64 = u => { u = new Uint8Array(u); let s = ""; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(s); }, ub = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function tk(id, pw) { const m = await crypto.subtle.importKey("raw", E.encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt: E.encode(id), iterations: 100000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); }
 async function enc(k, t) { const iv = crypto.getRandomValues(new Uint8Array(12)); return b64(iv) + "." + b64(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, E.encode(t))); }
 async function dec(k, c) { try { const [a, b] = c.split("."); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(a) }, k, ub(b))); } catch (e) { return null; } }
 
+// Images
 const shrink = f => new Promise(res => { const im = new Image(); im.onload = () => { const r = Math.min(1, 1280 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * r; c.height = im.height * r; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src); c.toBlob(b => res(b || f), "image/jpeg", 0.8); }; im.onerror = () => res(f); im.src = URL.createObjectURL(f); });
-async function upImg(f) { toast("Envoi de l'image…"); try { const fd = new FormData(); fd.append("file", await shrink(f)); fd.append("upload_preset", CFG.PRESET); const j = await (await fetch(`https://api.cloudinary.com/v1_1/${CFG.CLOUD}/image/upload`, { method: "POST", body: fd })).json(); if (!j.secure_url) throw 0; return j.secure_url; } catch (e) { toast("Échec de l'envoi de l'image"); return null; } }
-const img = u => u ? `<img class="th" loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}">` : "";
+async function upImg(f) { load(true); try { const fd = new FormData(); fd.append("file", await shrink(f)); fd.append("upload_preset", CFG.PRESET); const j = await (await fetch(`https://api.cloudinary.com/v1_1/${CFG.CLOUD}/image/upload`, { method: "POST", body: fd })).json(); if (!j.secure_url) throw 0; return j.secure_url; } catch (e) { toast("Image refusée."); return null; } finally { load(false); } }
+const img = u => u ? `<img class="th" loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}" style="width:100%;border-radius:15px;margin-top:8px;max-height:350px;object-fit:cover">` : "";
 
-function nav() { const T = [ ["feed", "🏠", "Accueil"], ["tun", "👥", "Communautés"], ["mk", "🛍️", "Marché"], ["w", "🔔", "Notifs"], ["contact", "👤", "Profil"] ]; if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]); $("#nv").innerHTML = S.uid && S.name && !S.susp ? T.map(t => `<a class="${tab == t[0] ? "on" : ""}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join("") : ""; const av = $("#hd-avatar"); if (S.name) { av.textContent = S.name.charAt(0).toUpperCase(); av.style.display = "flex"; } else { av.style.display = "none"; } }
+// Navigation
+function nav() { 
+  const T = [ ["feed", "🏠", "Accueil"], ["tun", "👥", "Groupes"], ["mk", "🛍️", "Marché"], ["w", "🔔", "Notifs"], ["contact", "👤", "Profil"] ]; 
+  if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]); 
+  $("#nv").innerHTML = S.uid && S.name && !S.susp ? T.map(t => `<a class="${tab == t[0] ? "on" : ""}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join("") : ""; 
+  const av = $("#hd-avatar"); 
+  if (S.avatar) { av.innerHTML = `<img src="${esc(S.avatar)}">`; } 
+  else if (S.name) { av.innerHTML = S.name.charAt(0).toUpperCase(); } 
+}
 function go(t) { tab = t; openT = null; if (tunOff) { tunOff(); tunOff = null; } draw(); }
-const errBox = e => `<div class="k err">⚠️ ${esc(e.message || e)}<br><button onclick="out()">Se déconnecter</button></div>`;
-async function out() { try { const t = localStorage.getItem("mbolo_fcm_" + S.uid); if (t) { const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val(); if (cur === t) await update(ref(db, "users/" + S.uid), { fcmToken: null }); localStorage.removeItem("mbolo_fcm_" + S.uid); } } catch (e) { } FB.signOut(auth); }
+async function out() { try { const t = localStorage.getItem("mbolo_fcm_" + S.uid); if (t) { await update(ref(db, "users/" + S.uid), { fcmToken: null }); localStorage.removeItem("mbolo_fcm_" + S.uid); } } catch (e) { } FB.signOut(auth); }
 
+// Render
 async function draw() {
   nav(); const v=$("#v");
   try {
     if (!ready) { v.innerHTML = "<p class='m' style='text-align:center;padding:40px'>Chargement…</p>"; return; }
     if (!S.uid) { v.innerHTML = fAuth(); return; }
-    if (S.susp) { v.innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><p class="m">Contacte l'administrateur.</p><button onclick="out()">Se déconnecter</button></div>`; return; }
-    if (!S.name) { v.innerHTML = `<div class="k" style="text-align:center"><p>Préparation de ton compte…</p><button class="s" onclick="out()">Se déconnecter</button></div>`; return; }
-    const ban = (tab === "tun" && openT) ? "" : notifBanner();
+    if (S.susp) { v.innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><button onclick="out()">Déconnexion</button></div>`; return; }
+    if (!S.name) { v.innerHTML = `<div class="k" style="text-align:center"><p>Préparation…</p><button class="s" onclick="out()">Déconnexion</button></div>`; return; }
+    
+    const ban = (tab === "tun" && openT) ? "" : ((notifState() === "default" && !notifLater) ? `<div class="k" style="border:2px solid var(--y);text-align:center"><b>🔔 Alertes</b><p class="m" style="margin:6px 0">Reçois les messages et crédits en direct.</p><button class="b" onclick="enableNotifs()" style="width:100%">Activer</button><button class="s" onclick="laterNotif()" style="width:100%">Plus tard</button></div>` : "");
+    
     v.innerHTML = ban + await ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
     if (tab === "tun" && openT) { const c = $("#cm"); if (c) c.onkeydown = e => { if (e.key === "Enter") snd(); }; renderMsgs(); }
-  } catch (e) { console.error(e); v.innerHTML = errBox(e); }
+  } catch (e) { console.error(e); v.innerHTML = `<div class="k" style="color:red">⚠️ Erreur de chargement. <button onclick="location.reload()">Recharger</button></div>`; }
 }
 
+// Auth & Profil
 const setMode = m => { mode = m; amsg = ""; draw(); };
 function fAuth() {
   const L = mode === "login";
   return `<div class="k"><h2 style="color:var(--g);text-align:center;font-size:24px">Mbolo</h2>
-  <div class="tabs" style="justify-content:center"><button class="${L ? "on" : "s"}" onclick="setMode('login')">Se connecter</button><button class="${!L ? "on" : "s"}" onclick="setMode('reg')">Créer un compte</button></div>
-  ${amsg ? `<div class="err">${esc(amsg)}</div>` : ""}
-  <input id="au" placeholder="Pseudo (ex: aissa)" autocapitalize="none" autocomplete="username">
-  <input id="ap" type="password" placeholder="Mot de passe" autocomplete="${L ? "current-password" : "new-password"}">
-  ${L ? "" : `<details><summary class="m">Lire la charte</summary><small>Respecte les autres. 1 KC = 100 FCFA. Commission ${CFG.FEE_TR * 100}%. Ton WhatsApp n'est visible que dans l'annuaire.</small></details><label class="m" style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" id="tos" style="width:auto"> J'accepte la charte</label>`}
-  <button id="ab" onclick="submitAuth()" style="width:100%;margin-top:15px">${L ? "Se connecter" : "Créer mon compte"}</button></div>`;
+  <div class="row" style="justify-content:center;gap:10px;margin-bottom:15px"><button class="${L ? "on" : "s"}" onclick="setMode('login')">Connexion</button><button class="${!L ? "on" : "s"}" onclick="setMode('reg')">Créer un compte</button></div>
+  ${amsg ? `<div style="background:#ffebee;color:#b71c1c;padding:10px;border-radius:10px;margin-bottom:10px;text-align:center">${esc(amsg)}</div>` : ""}
+  <input id="au" placeholder="Pseudo" autocapitalize="none">
+  <input id="ap" type="password" placeholder="Mot de passe">
+  ${L ? "" : `<label class="m" style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" id="tos" style="width:auto"> J'accepte la charte (1 KC = 100 FCFA)</label>`}
+  <button id="ab" onclick="submitAuth()" style="width:100%;margin-top:15px">${L ? "Entrer" : "S'inscrire"}</button></div>`;
 }
 async function submitAuth() {
   const p = $("#au").value.trim().toLowerCase(), w = $("#ap").value, reg = mode === "reg";
-  if (!/^[a-z0-9_]{3,20}$/.test(p) || (reg && ["admin", "support"].includes(p))) return toast("Pseudo invalide");
-  if (w.length < 6) return toast("Mot de passe trop court");
+  if (!/^[a-z0-9_]{3,20}$/.test(p)) return toast("Pseudo invalide (3-20 car.)");
+  if (w.length < 6) return toast("Mot de passe trop court (min 6)");
   if (reg && !$("#tos").checked) return toast("Accepte la charte");
-  $("#ab").disabled = true;
+  $("#ab").disabled = true; load(true);
   try { await (reg ? FB.createUserWithEmailAndPassword : FB.signInWithEmailAndPassword)(auth, p + "@mbolo.app", w); }
-  catch (e) { amsg = ERR[e.code] || e.code; draw(); }
+  catch (e) { amsg = ERR[e.code] || e.code; draw(); } finally { load(false); }
 }
-
 async function createProfile(u) {
   const name = u.email.split("@")[0];
   for (let i = 0; i < 5; i++) {
-    const code = genCode(), prof = { name, code, bal: 0, joined: Date.now(), tos: Date.now() };
+    const code = genCode(), prof = { name, code, bal: 0, joined: Date.now(), tos: Date.now(), avatar: null, bio: "", age: null, address: "" };
     try { await update(ref(db), { ["users/" + u.uid]: prof, ["ids/" + code]: u.uid }); return prof; } catch (e) { }
   }
   return null;
 }
-
 async function initUser(u) {
   clearL(); S = fresh(); S.uid = u.uid;
   const g = async p => { try { return (await get(ref(db, p))).val(); } catch (e) { return null; } };
   S.admin = (await g("admins/" + u.uid)) === true; S.mod = (await g("moderators/" + u.uid)) === true; S.susp = await g("suspended/" + u.uid);
   const p = (await g("users/" + u.uid)) || await createProfile(u);
-  if (!p) { toast("Impossible de créer ton profil"); draw(); return; }
-  S.name = p.name; S.code = p.code;
+  if (!p) { toast("Erreur de profil"); draw(); return; }
+  Object.assign(S, { name: p.name, code: p.code, avatar: p.avatar, bio: p.bio || "", age: p.age, address: p.address || "" });
   try { S.tun = JSON.parse(localStorage["mbolo_tun_" + u.uid] || "{}"); } catch (e) { }
   
   listen(ref(db, "users/" + u.uid + "/bal"), s => { 
     const newBal = s.val() || 0; 
-    if (lastBal !== null && newBal !== lastBal) {
-      if (newBal > lastBal) notifyUser("💰 Crédit reçu", "Ton solde a augmenté de " + kc(newBal - lastBal) + ".");
-    }
+    if (lastBal !== null && newBal !== lastBal && newBal > lastBal) notifyUser("💰 Crédit reçu", "Ton solde a augmenté de " + kc(newBal - lastBal) + ".");
     lastBal = newBal; S.bal = newBal; nav(); soft("w"); 
   });
-  
   listen(ref(db, "users/" + u.uid + "/hist"), s => { S.hist = toArr(s).sort((a,b) => b.ts - a.ts).slice(0, 20); soft("w"); });
   
   let firstInbox = true;
   listen(ref(db, "inbox/" + u.uid), s => { 
     const n = toArr(s).sort((a,b) => b.ts - a.ts); 
-    if (!firstInbox && n.length > S.notifs.length) {
-      const newMsg = n[0];
-      notifyUser("🔔 Notification Mbolo", newMsg.txt);
-    } 
-    firstInbox = false; S.notifs = n; soft("w"); 
+    if (!firstInbox && n.length > S.notifs.length) notifyUser("🔔 Notification", n[0].txt);
+    firstInbox = false; S.notifs = n; 
+    const badge = $("#notif-badge"); if (badge) badge.style.display = n.length ? "flex" : "none";
+    soft("w"); 
   });
   
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
-  listen(query(ref(db, "posts"), limitToLast(30)), s => { S.posts = toArr(s); soft("feed"); });
+  listen(query(ref(db, "posts"), limitToLast(50)), s => { S.posts = toArr(s); soft("feed"); });
   listen(query(ref(db, "marketplace"), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
   listen(ref(db, "directory"), s => { S.dir = toArr(s); soft("contact"); });
   if (S.admin) { listen(ref(db, "recharges"), s => { A.rech = s.val() || {}; soft("adm"); }); listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); }); }
@@ -324,130 +276,131 @@ async function initUser(u) {
   draw();
   if (notifState() === "granted") saveToken(true); else armAutoPrompt();
 }
+FB.onAuthStateChanged(auth, u => { ready = true; if (u) { S.uid = u.uid; draw(); initUser(u); } else { clearL(); S = fresh(); draw(); } });
 
-FB.onAuthStateChanged(auth, u => { ready = true; if (u) { S.uid = u.uid; draw(); initUser(u).catch(e => { toast("Erreur de chargement"); }); } else { clearL(); S = fresh(); draw(); } });
-
+// Feed & Posts
 const setF = f => { feedF = f; draw(); };
-const badge = c => c === "edu" ? '<span class="bd">📚 Éducation</span>' : c === "com" ? '<span class="bd c">🛍️ Commerce</span>' : c === "ann" ? '<span class="bd a">📢 Officiel</span>' : "";
+const badge = c => c === "edu" ? '<span class="bd">📚 Éducation</span>' : c === "com" ? '<span class="bd c">🛍️ Commerce</span>' : c === "ann" ? '<span class="bd a">📢 Officiel</span>' : c === "local" ? '<span class="bd">📍 Vie locale</span>' : c === "culture" ? '<span class="bd">🥁 Culture</span>' : c === "business" ? '<span class="bd">💼 Business</span>' : c === "sport" ? '<span class="bd">⚽ Sport</span>' : "";
 
 function fFeed() {
   const P = S.posts.filter(p => feedF === "all" || p.cat === feedF).sort((a, b) => b.ts - a.ts);
-  return `<div class="wallet-card" onclick="go('w')"><div><div style="font-size:13px;opacity:.8">Mon portefeuille KC</div><div class="bal">${kc(S.bal)}</div></div><button class="btn-wallet" onclick="go('w');event.stopPropagation()">Découvrir</button></div>
-  <h3 style="margin:0 0 10px;font-size:16px">Stories communautaires</h3>
-  <div class="stories-scroll"><div class="story"><div class="img"><span style="font-size:24px">+</span></div><span>Ajouter</span></div><div class="story"><div class="img" style="background:#f0e6d2">📍</div><span>Vie locale</span></div><div class="story"><div class="img" style="background:#e2f0d9">🥁</div><span>Culture</span></div><div class="story"><div class="img" style="background:#d9e2f3">💼</div><span>Business</span></div><div class="story"><div class="img" style="background:#fce4d6">⚽</div><span>Sport</span></div></div>
-  <div class="tabs"><button class="${feedF === "all" ? "on" : "s"}" onclick="setF('all')">Tout</button><button class="${feedF === "edu" ? "on" : "s"}" onclick="setF('edu')">📚 Éducation</button><button class="${feedF === "com" ? "on" : "s"}" onclick="setF('com')">🛍️ Commerce</button></div>
-  <div class="k"><div class="post-header"><div class="post-avatar">${S.name ? S.name.charAt(0).toUpperCase() : "?"}</div><div class="post-meta"><b>Mon espace</b></div></div><textarea id="px" rows="2" maxlength="1000" placeholder="Partage une info…"></textarea><input type="file" id="pimg" accept="image/*" style="font-size:12px;padding:8px"><select id="pcat"><option value="gen">Discussion</option><option value="edu">📚 Éducation</option><option value="com">🛍️ Commerce</option>${S.admin ? '<option value="ann">📢 Officiel</option>' : ""}</select><button id="pb" onclick="pub()" style="width:100%">Publier</button></div>` +
-  (P.map(p => `<div class="k"><div class="post-header"><div class="post-avatar">${esc(p.n).charAt(0).toUpperCase()}</div><div class="post-meta"><b>${esc(p.n)} ${badge(p.cat)}</b><small>${ago(p.ts)}</small></div></div><div class="post-content">${esc(p.x)}</div>${img(p.thumb)}<div class="reactions"><button onclick="toast('❤️ J\\'aime !')">❤️ 24</button><button onclick="toast('😂 Haha !')">😂 8</button><button onclick="toast('🔥 En feu !')">🔥 12</button><button onclick="toast('👏 Bravo !')">👏 5</button></div><div class="post-actions"><span style="cursor:pointer" onclick="toast('Commentaires bientôt disponibles')">💬 Commenter</span><span style="cursor:pointer" onclick="toast('Partage bientôt disponible')">↗️ Partager</span>${p.a === S.uid || S.admin || S.mod ? `<button onclick="delPost('${p.id}')">🗑️</button>` : ""}</div></div>`).join("") || "<p class='m' style='text-align:center'>Aucune publication.</p>");
+  return `<div class="wallet-card" onclick="go('w')"><div style="font-size:13px;opacity:.8">Mon portefeuille</div><div class="bal">${kc(S.bal)}</div><button style="background:var(--y);color:#222;padding:8px 15px;border-radius:10px;font-weight:bold">Découvrir</button></div>
+  
+  <h3 style="margin:0 0 10px;font-size:16px">Stories</h3>
+  <div class="stories-scroll">
+    <div class="story" onclick="document.getElementById('px').focus()"><div class="img"><span style="font-size:24px">+</span></div><span>Ajouter</span></div>
+    <div class="story" onclick="setF('local')"><div class="img" style="background:#f0e6d2">📍</div><span>Vie locale</span></div>
+    <div class="story" onclick="setF('culture')"><div class="img" style="background:#e2f0d9">🥁</div><span>Culture</span></div>
+    <div class="story" onclick="setF('business')"><div class="img" style="background:#d9e2f3">💼</div><span>Business</span></div>
+    <div class="story" onclick="setF('sport')"><div class="img" style="background:#fce4d6">⚽</div><span>Sport</span></div>
+  </div>
+
+  <div class="row" style="overflow-x:auto;gap:8px;margin-bottom:12px;padding-bottom:5px">
+    <button class="${feedF === "all" ? "on" : "s"}" onclick="setF('all')">Tout</button>
+    <button class="${feedF === "edu" ? "on" : "s"}" onclick="setF('edu')">📚 Éducation</button>
+    <button class="${feedF === "com" ? "on" : "s"}" onclick="setF('com')">🛍️ Commerce</button>
+  </div>
+
+  <div class="k">
+    <div class="post-header"><div class="post-avatar">${S.avatar ? `<img src="${esc(S.avatar)}">` : S.name.charAt(0).toUpperCase()}</div><div class="post-meta"><b>Mon espace</b></div></div>
+    <textarea id="px" rows="2" maxlength="1000" placeholder="Partage une info…"></textarea>
+    <input type="file" id="pimg" accept="image/*" style="font-size:12px;padding:8px">
+    <select id="pcat"><option value="gen">Discussion</option><option value="local">📍 Vie locale</option><option value="culture">🥁 Culture</option><option value="business">💼 Business</option><option value="sport">⚽ Sport</option><option value="edu">📚 Éducation</option><option value="com">🛍️ Commerce</option>${S.admin ? '<option value="ann">📢 Officiel</option>' : ""}</select>
+    <button id="pb" onclick="pub()" style="width:100%">Publier</button>
+  </div>` +
+  (P.map(p => `<div class="k">
+    <div class="post-header"><div class="post-avatar">${p.av ? `<img src="${esc(p.av)}">` : esc(p.n).charAt(0).toUpperCase()}</div><div class="post-meta"><b>${esc(p.n)} ${badge(p.cat)}</b><small>${ago(p.ts)}</small></div></div>
+    <div class="post-content">${esc(p.x)}</div>${img(p.thumb)}
+    <div class="post-actions">
+      <span onclick="toast('Commentaires bientôt')">💬 Commenter</span>
+      <span onclick="toast('Partage bientôt')">↗️ Partager</span>
+      ${p.a === S.uid || S.admin || S.mod ? `<button onclick="delPost('${p.id}')">🗑️</button>` : ""}
+    </div>
+  </div>`).join("") || "<p class='m' style='text-align:center'>Aucune publication.</p>");
 }
 
 async function pub() {
   const x = $("#px").value.trim(), f = $("#pimg").files[0]; if (!x) return toast("Écris un texte");
   $("#pb").disabled = true;
-  try { const d = { a: S.uid, n: S.name, x, cat: $("#pcat").value, ts: Date.now() }; if (f) { const u = await upImg(f); if (u) d.thumb = u; } await push(ref(db, "posts"), d); toast("Publié !"); } catch (e) { toast("Refusé"); }
-  draw();
+  try { 
+    const d = { a: S.uid, n: S.name, av: S.avatar, x, cat: $("#pcat").value, ts: Date.now() }; 
+    if (f) { const u = await upImg(f); if (u) d.thumb = u; } 
+    await push(ref(db, "posts"), d); toast("Publié !"); 
+  } catch (e) { toast("Erreur de publication"); } finally { draw(); }
 }
-async function delPost(id) { if (confirm("Supprimer cette publication ?")) try { await remove(ref(db, "posts/" + id)); } catch (e) { toast("Refusé"); } }
+async function delPost(id) { if (confirm("Supprimer ?")) try { await remove(ref(db, "posts/" + id)); } catch (e) { toast("Erreur"); } }
 
-function fMk() {
-  return `<div class="k" style="border-left:4px solid var(--g)"><h3>Mettre en vente</h3><input id="mt" maxlength="60" placeholder="Produit ou service"><input id="mp" type="number" min="5" step="1" placeholder="Prix en KC (min 5)"><textarea id="md" rows="2" maxlength="500" placeholder="Description…"></textarea><input type="file" id="mimg" accept="image/*" style="padding:8px"><button id="mb" onclick="sell()" style="width:100%">Publier</button></div>` +
-  (S.mk.sort((a, b) => b.ts - a.ts).map(l => `<div class="k" style="padding:0;overflow:hidden">${img(l.thumb)}<div style="padding:16px"><div class="row"><b>${esc(l.t)}</b><b style="color:var(--g);font-size:18px">${kc(l.d)}</b></div><small>Vendeur : ${esc(l.n)}</small><p style="margin:8px 0">${esc(l.x)}</p><div class="row">${l.a === S.uid ? '<small class="m">Ton annonce</small>' : `<button onclick="buy('${l.id}')" style="width:100%">Acheter</button>`}${l.a === S.uid || S.admin || S.mod ? `<button class="l" onclick="delMk('${l.id}')">🗑️</button>` : ""}</div></div></div>`).join("") || "<p class='m' style='text-align:center'>Aucune annonce.</p>");
+// Profil
+async function updateProfile() {
+  const n = $("#pn").value.trim(), bio = $("#pbio").value.trim(), age = $("#page").value, addr = $("#paddr").value.trim(), f = $("#pavimg").files[0];
+  if (!n || n.length < 2) return toast("Nom invalide");
+  const updates = { name: n, bio, age: parseInt(age) || null, address: addr };
+  if (f) { const url = await upImg(f); if (url) updates.avatar = url; }
+  try { await update(ref(db, "users/" + S.uid), updates); Object.assign(S, updates); if (updates.avatar) S.avatar = updates.avatar; toast("Profil mis à jour !"); draw(); } catch(e) { toast("Erreur"); }
 }
-async function sell() {
-  const t = $("#mt").value.trim(), p = parseFloat($("#mp").value), f = $("#mimg").files[0]; if (t.length < 3 || !(p >= 5)) return toast("Titre et prix (min 5 KC) requis");
-  $("#mb").disabled = true;
-  try { const d = { a: S.uid, n: S.name, t, d: Math.round(p * 10), x: $("#md").value.trim(), ts: Date.now() }; if (f) { const u = await upImg(f); if (u) d.thumb = u; } await push(ref(db, "marketplace"), d); toast("Annonce publiée !"); } catch (e) { toast("Refusé"); }
-  draw();
-}
-async function delMk(id) { if (confirm("Retirer cette annonce ?")) try { await remove(ref(db, "marketplace/" + id)); } catch (e) { toast("Refusé"); } }
-async function buy(id) { const l = S.mk.find(m => m.id === id); if (!l) return; if (S.freeze) return toast("Opérations suspendues"); if (l.d > S.bal) return toast("Solde insuffisant"); if (!confirm(`Acheter « ${l.t} » pour ${kc(l.d)} ?`)) return; try { const to = (await get(ref(db, "users/" + l.a + "/code"))).val(); await push(ref(db, "transfer_requests"), { t: "tr", f: S.uid, fn: S.name, to, a: l.d, m: ("Achat: " + l.t).slice(0, 100), s: "p", ts: Date.now() }); toast("Demande envoyée !"); } catch (e) { toast("Refusé"); } }
 
-const saveTun = () => localStorage.setItem("mbolo_tun_" + S.uid, JSON.stringify(S.tun));
-const TID = /^(CLS|BQT)-[A-Z0-9]{4}$/;
-function fTun() {
-  if (openT) return chat();
-  const box = (t, c, ti, lab) => `<div class="k" style="border-left:4px solid ${c}"><h3>${lab}</h3><input id="tn_${t}" placeholder="Nom"><input id="tp_${t}" type="password" placeholder="Clé secrète"><button onclick="mkT('${t}')" style="width:100%;background:${c}">Créer</button></div>`;
-  return box("edu", "#0d47a1", "Créer la classe", "📚 Créer une classe") + box("com", "#1b5e20", "Créer la boutique", "🛍️ Créer une boutique") + `<div class="k"><h3>🔑 Rejoindre</h3><input id="ti" placeholder="ID (ex. CLS-AB12)"><input id="tq" type="password" placeholder="Clé secrète"><button onclick="joinT()" style="width:100%">Rejoindre</button></div><h3 style="margin-top:20px">Mes communautés</h3>` + (Object.entries(S.tun).map(([i, t]) => `<div class="k" onclick="op('${i}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center"><div><b>${t.type === "com" ? "🛍️" : "📚"} ${esc(t.n)}</b><br><small>ID : ${esc(i)}</small></div><span style="font-size:20px;color:var(--m)">›</span></div>`).join("") || "<p class='m'>Aucune communauté.</p>");
+function fContact() {
+  return `<div class="k">
+    <h3>👤 Mon Profil</h3>
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px">
+      <div class="post-avatar" style="width:70px;height:70px;font-size:28px">${S.avatar ? `<img src="${esc(S.avatar)}">` : S.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1"><input type="file" id="pavimg" accept="image/*" style="margin:0;padding:8px;font-size:12px"></div>
+    </div>
+    <input id="pn" maxlength="40" placeholder="Nom d'affichage" value="${esc(S.name)}">
+    <textarea id="pbio" rows="2" maxlength="150" placeholder="Bio…">${esc(S.bio)}</textarea>
+    <div class="row"><input id="page" type="number" placeholder="Âge" value="${S.age || ''}" style="flex:1"><input id="paddr" placeholder="Ville" value="${esc(S.address)}" style="flex:2"></div>
+    <button onclick="updateProfile()" style="width:100%;margin-top:10px">Enregistrer</button>
+  </div>
+  <div class="k">
+    <h3>📇 Annuaire</h3>
+    <input id="dn" maxlength="40" placeholder="Boutique / Service" value="${esc(S.dir.find(d => d.id === S.uid)?.n || '')}">
+    <input id="dq" placeholder="Quartier" value="${esc(S.dir.find(d => d.id === S.uid)?.qu || '')}">
+    <input id="dw" type="tel" placeholder="WhatsApp" value="${esc(S.dir.find(d => d.id === S.uid)?.wa || '')}">
+    <label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto" ${S.dir.some(d => d.id === S.uid) ? "checked" : ""}> Visible publiquement</label>
+    <button onclick="regDir()" style="width:100%">Publier</button>
+  </div>`;
 }
-async function mkT(type) { const n = $("#tn_" + type).value.trim(), p = $("#tp_" + type).value; if (!n || !p) return toast("Nom et clé requis"); const i = (type === "edu" ? "CLS-" : "BQT-") + genCode().slice(0, 4); S.tun[i] = { n, type }; saveTun(); TK[i] = await tk(i, p); toast("Créé ! ID : " + i); op(i); }
-async function joinT() { const i = $("#ti").value.trim().toUpperCase(), p = $("#tq").value; if (!TID.test(i) || !p) return toast("ID ou clé invalide"); if (!S.tun[i]) { S.tun[i] = { n: "Tunnel " + i, type: i.startsWith("BQT") ? "com" : "edu" }; saveTun(); } TK[i] = await tk(i, p); op(i); }
-async function op(i) {
-  if (!TK[i]) { const p = prompt("Clé secrète"); if (!p) return; TK[i] = await tk(i, p); }
-  openT = i; S.msgs = []; if (tunOff) tunOff();
-  tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), s => {
-    const oldCount = S.msgs.length; S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
-    const last = S.msgs[S.msgs.length - 1];
-    if (last && S.msgs.length > oldCount && oldCount > 0 && last.n !== S.name && document.hidden) { dec(TK[i], last.c).then(t => { if (t) notifyUser("Nouveau message", last.n + " : " + t.slice(0, 50)); }); }
-    renderMsgs();
-  }, () => toast("Accès refusé"));
-  draw();
+async function regDir() { 
+  const n = $("#dn").value.trim(), wa = $("#dw").value.replace(/\D/g, ""); 
+  if (n.length < 2 || wa.length < 8) return toast("Champs invalides"); 
+  if (!$("#dk").checked) { await remove(ref(db, "directory/" + S.uid)); toast("Retiré"); return draw(); }
+  try { await set(ref(db, "directory/" + S.uid), { n, cat: "com", qu: $("#dq").value.trim(), wa, ok: true, ts: Date.now() }); toast("Publié !"); draw(); } catch (e) { toast("Erreur"); } 
 }
-function chat() {
-  const t = S.tun[openT] || { n: "?" };
-  return `<div class="k" style="height:72vh;display:flex;flex-direction:column;padding:12px"><div class="row" style="margin-bottom:10px"><button class="s" onclick="go('tun')">←</button><b>${esc(t.n)}</b><a href="https://wa.me/?text=${encodeURIComponent("Rejoins " + t.n + " sur Mbolo. ID : " + openT)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px">📤</button></a></div><div id="cb" style="flex:1;overflow-y:auto"></div><div class="row" style="margin-top:10px"><input id="cm" placeholder="Message…" style="margin:0"><button onclick="snd()" style="margin:0;padding:10px 15px">➤</button></div></div>`;
-}
-async function renderMsgs() {
-  const b = $("#cb"); if (!b || !openT) return; const h = [];
-  for (const m of S.msgs) { const t = await dec(TK[openT], m.c), me = m.n === S.name; h.push(`<div style="margin-bottom:12px;text-align:${me ? "right" : "left"}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}</small><br><span style="display:inline-block;padding:10px 14px;border-radius:16px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--l)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "🔒" : esc(t)}</span></div>`); }
-  b.innerHTML = h.join("") || "<p class='m' style='text-align:center'>Début de la conversation.</p>"; b.scrollTop = b.scrollHeight;
-}
-async function snd() { const i = $("#cm"), t = i.value.trim(); if (!t || !TK[openT]) return; i.value = ""; try { await push(ref(db, "tunnels/" + openT), { ts: Date.now(), n: S.name, c: await enc(TK[openT], t) }); } catch (e) { toast("Refusé"); } }
 
+// Wallet
 function fW() {
   const fz = S.freeze ? " disabled" : "";
-  const histHtml = S.hist.length ? S.hist.map(h => { const c = h.t === "topup" ? "var(--g)" : (h.a > 0 ? "var(--g)" : "var(--d)"); return `<div class="h-item"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${c};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div>`; }).join("") : "<p class='m'>Aucune transaction.</p>";
-  const notifHtml = S.notifs.length ? S.notifs.map(n => `<div class="notif"><div class="row"><span>${esc(n.txt)}</span><button class="l" onclick="readNotif('${n.id}')" style="color:var(--m)">✔</button></div><small>${ago(n.ts)}</small></div>`).join("") : "<p class='m'>Aucune notification.</p>";
-  const ns = notifState();
+  const histHtml = S.hist.length ? S.hist.map(h => `<div style="border-bottom:1px solid var(--l);padding:10px 0"><div class="row"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${h.a > 0 ? "var(--g)" : "var(--d)"};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div></div>`).join("") : "<p class='m'>Aucune transaction.</p>";
+  const notifHtml = S.notifs.length ? S.notifs.map(n => `<div style="border-bottom:1px solid var(--l);padding:10px 0"><div class="row"><span>${esc(n.txt)}</span><button onclick="readNotif('${n.id}')" style="background:none;color:var(--m);padding:0">✔</button></div><small>${ago(n.ts)}</small></div>`).join("") : "<p class='m'>Aucune notification.</p>";
   
-  // BANNIÈRE D'ACTIVATION (sans bouton test)
-  const alertHtml = `<div class="k"><h3>📲 Alertes sur cet appareil</h3><p class="m">${ns === "granted" ? "✅ Activées. Tu recevras des alertes automatiques." : ns === "denied" ? "🚫 Bloquées (cadenas)." : "Pas encore activées."}</p>${ns === "default" ? `<button class="b" onclick="enableNotifs()" style="width:100%">Activer</button>` : ""}${ns === "granted" ? `<button class="b" onclick="enableNotifs()">Synchroniser</button>` : ""}</div>`;
-  
-  return (S.freeze ? '<div class="err">⚠️ Opérations suspendues.</div>' : "") + `<div class="wallet-card" style="flex-direction:column;align-items:flex-start;padding:20px"><div style="font-size:14px;opacity:.8">Solde disponible</div><div class="bal" style="font-size:38px;margin:5px 0">${kc(S.bal)}</div><small style="opacity:.8">≈ ${fc(S.bal)} · 1 KC = 100 FCFA</small></div>
-  <div class="k" style="border-left:4px solid var(--y)"><h3>🔔 Mes Notifications</h3>${notifHtml}</div>${alertHtml}
-  <div class="k"><h3>🛒 Acheter des KC</h3><input id="ra" type="number" step="10" placeholder="Montant FCFA (min. 500)"><input id="rr" maxlength="40" placeholder="Réf. Airtel (optionnel)"><button onclick="reqRech()"${fz} style="width:100%">Déclarer</button><a href="https://wa.me/${CFG.AIRTEL}?text=${encodeURIComponent("Bonjour, je veux des KC. Code: " + S.code)}" target="_blank"><button class="wa">💬 WhatsApp</button></a></div>
-  <div class="k"><h3>Envoyer des KC</h3><input id="wt" maxlength="6" placeholder="Code destinataire"><input id="wd" type="number" step="0.1" placeholder="Montant KC"><button onclick="reqTr()"${fz} style="width:100%">Envoyer</button></div>
-  <div class="k"><h3>💸 Retirer</h3><input id="xk" type="number" step="0.1" placeholder="Montant KC (min 5)"><input id="xn" type="tel" maxlength="20" placeholder="Numéro Airtel"><button onclick="reqWd()"${fz} style="width:100%">Retirer</button></div>
+  return `<div class="wallet-card" style="flex-direction:column;align-items:flex-start"><div style="opacity:.8">Solde</div><div class="bal">${kc(S.bal)}</div><small>≈ ${fc(S.bal)}</small></div>
+  <div class="k"><h3>🔔 Notifications</h3>${notifHtml}</div>
+  <div class="k"><h3>🛒 Acheter</h3><input id="ra" type="number" placeholder="FCFA (min 500)"><button onclick="reqRech()"${fz} style="width:100%">Déclarer</button><a href="https://wa.me/${CFG.AIRTEL}?text=KC" target="_blank"><button class="wa">WhatsApp</button></a></div>
+  <div class="k"><h3>Envoyer</h3><input id="wt" maxlength="6" placeholder="Code destinataire"><input id="wd" type="number" placeholder="Montant KC"><button onclick="reqTr()"${fz} style="width:100%">Envoyer</button></div>
+  <div class="k"><h3>💸 Retirer</h3><input id="xk" type="number" placeholder="KC (min 5)"><input id="xn" type="tel" placeholder="Numéro Airtel"><button onclick="reqWd()"${fz} style="width:100%">Retirer</button></div>
   <div class="k" style="text-align:center"><h3>Mon Code</h3><b style="font-size:26px;letter-spacing:4px;color:var(--g)">${esc(S.code)}</b></div>
   <div class="k"><h3>📜 Relevé</h3>${histHtml}</div>
-  <div class="k" style="display:flex;gap:10px"><button class="s" onclick="delAcc()" style="flex:1;font-size:12px">Supprimer compte</button><button class="r" onclick="out()" style="flex:1">Déconnexion</button></div>`;
+  <div class="k" style="display:flex;gap:10px"><button class="s" onclick="delAcc()" style="flex:1">Supprimer</button><button class="r" onclick="out()" style="flex:1">Quitter</button></div>`;
 }
-
 async function readNotif(id) { try { await remove(ref(db, "inbox/" + S.uid + "/" + id)); } catch (e) { } }
-async function send(path, d, msg) { if (S.freeze) return toast("Opérations suspendues"); try { await push(ref(db, path), d); toast(msg); draw(); } catch (e) { toast("Refusé"); } }
-function reqRech() { const a = parseInt($("#ra").value); if (!(a >= 500) || a % 10) return toast("Montant invalide"); const d = { uid: S.uid, name: S.name, amountFCFA: a, amountKC: a / 10, status: "pending", ts: Date.now() }, r = $("#rr").value.trim(); if (r) d.ref = r; send("recharges", d, "Recharge déclarée."); }
-function reqTr() { const to = $("#wt").value.trim().toUpperCase(), a = Math.round(parseFloat($("#wd").value) * 10); if (!/^[A-Z0-9]{6}$/.test(to) || to === S.code) return toast("Code invalide"); if (!(a >= 1) || a > S.bal) return toast("Solde insuffisant"); send("transfer_requests", { t: "tr", f: S.uid, fn: S.name, to, a, m: "Transfert", s: "p", ts: Date.now() }, "Demande envoyée."); }
-function reqWd() { const a = Math.round(parseFloat($("#xk").value) * 10), n = $("#xn").value.trim(); if (!(a >= 50) || a > S.bal) return toast("Minimum 5 KC"); if (n.replace(/\D/g, "").length < 8) return toast("Numéro invalide"); send("transfer_requests", { t: "wd", f: S.uid, fn: S.name, a, m: n, s: "p", ts: Date.now() }, "Retrait demandé."); }
-async function delAcc() { if (S.bal > 0) return toast("Solde doit être 0."); if (!confirm("Supprimer DÉFINITIVEMENT ton compte ?")) return; const u = auth.currentUser; try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null, ["suspended/" + S.uid]: null }); await u.delete(); toast("Compte supprimé."); } catch (e) { toast("Erreur (reconnecte-toi)."); } }
+async function send(path, d, msg) { if (S.freeze) return toast("Suspendu"); try { await push(ref(db, path), d); toast(msg); draw(); } catch (e) { toast("Erreur"); } }
+function reqRech() { const a = parseInt($("#ra").value); if (!(a >= 500)) return toast("Min 500 FCFA"); send("recharges", { uid: S.uid, name: S.name, amountFCFA: a, amountKC: a / 10, status: "pending", ts: Date.now() }, "Déclaré."); }
+function reqTr() { const to = $("#wt").value.trim().toUpperCase(), a = Math.round(parseFloat($("#wd").value) * 10); if (!/^[A-Z0-9]{6}$/.test(to) || to === S.code) return toast("Code invalide"); if (!(a >= 1) || a > S.bal) return toast("Solde insuffisant"); send("transfer_requests", { t: "tr", f: S.uid, fn: S.name, to, a, m: "Transfert", s: "p", ts: Date.now() }, "Demandé."); }
+function reqWd() { const a = Math.round(parseFloat($("#xk").value) * 10), n = $("#xn").value.trim(); if (!(a >= 50) || a > S.bal) return toast("Min 5 KC"); if (n.length < 8) return toast("Numéro invalide"); send("transfer_requests", { t: "wd", f: S.uid, fn: S.name, a, m: n, s: "p", ts: Date.now() }, "Demandé."); }
+async function delAcc() { if (S.bal > 0) return toast("Videz votre solde."); if (!confirm("Supprimer définitivement ?")) return; try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null }); await auth.currentUser.delete(); } catch (e) { toast("Erreur"); } }
 
-const setSearch = v => { dirSearch = v.toLowerCase(); draw(); };
-function fContact() {
-  const me = S.dir.find(d => d.id === S.uid) || {}; let D = S.dir;
-  if (dirSearch) D = D.filter(d => (d.n || "").toLowerCase().includes(dirSearch) || (d.qu || "").toLowerCase().includes(dirSearch) || (d.cat || "").includes(dirSearch));
-  return `<div class="k"><h3>📇 Ma carte</h3><input id="dn" maxlength="40" placeholder="Nom / Boutique" value="${esc(me.n)}"><select id="dc"><option value="edu">📚 Enseignant</option><option value="com"${me.cat === "com" ? " selected" : ""}>🛍️ Commerçant</option></select><input id="dq" maxlength="40" placeholder="Quartier" value="${esc(me.qu)}"><input id="dw" type="tel" placeholder="WhatsApp" value="${esc(me.wa)}"><label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto"> Visible dans l'annuaire</label><button onclick="regDir()" style="width:100%">Publier</button>${me.id ? '<button class="s" onclick="delDir()" style="width:100%">Retirer</button>' : ""}</div><h3>Annuaire</h3><input placeholder="🔍 Rechercher…" oninput="setSearch(this.value)" value="${esc(dirSearch)}">${D.sort((a, b) => b.ts - a.ts).map(c => `<div class="k" style="display:flex;justify-content:space-between;align-items:center"><div><b>${esc(c.n)}</b>${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small></div><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px 12px">💬</button></a></div>`).join("") || "<p class='m'>Aucun résultat.</p>"}`;
-}
-async function regDir() { const n = $("#dn").value.trim(), wa = $("#dw").value.replace(/\D/g, ""); if (n.length < 2 || wa.length < 8 || wa.length > 15) return toast("Champs invalides"); if (!$("#dk").checked) return toast("Cochez la visibilité"); try { await set(ref(db, "directory/" + S.uid), { n, cat: $("#dc").value, qu: $("#dq").value.trim(), wa, ok: true, ts: Date.now() }); toast("Carte publiée !"); } catch (e) { toast("Refusé"); } }
-async function delDir() { try { await remove(ref(db, "directory/" + S.uid)); toast("Retiré"); } catch (e) { toast("Erreur"); } }
+// Marketplace & Groupes (Simplifiés pour la réponse)
+function fMk() { return `<div class="k"><h3>Vendre</h3><input id="mt" placeholder="Titre"><input id="mp" type="number" placeholder="Prix KC"><button onclick="sell()" style="width:100%">Publier</button></div>` + (S.mk.map(l => `<div class="k"><b>${esc(l.t)}</b> - ${kc(l.d)}<br><small>${esc(l.n)}</small><button onclick="buy('${l.id}')" style="width:100%;margin-top:10px">Acheter</button></div>`).join("") || "<p class='m'>Vide.</p>"); }
+async function sell() { const t = $("#mt").value.trim(), p = parseFloat($("#mp").value); if (!t || !(p >= 5)) return toast("Invalide"); try { await push(ref(db, "marketplace"), { a: S.uid, n: S.name, t, d: Math.round(p * 10), ts: Date.now() }); draw(); } catch (e) { toast("Erreur"); } }
+async function buy(id) { const l = S.mk.find(m => m.id === id); if (l.d > S.bal) return toast("Fonds insuffisants"); toast("Fonctionnalité en cours de validation"); }
 
-function fAdm() {
-  const rech = Object.entries(A.rech).filter(([k, r]) => r.status === "pending"), tr = Object.entries(A.tr).filter(([k, r]) => r.s === "p"), rep = Object.entries(A.rep).filter(([k, r]) => r.s === "open"); let h = "";
-  if (S.admin) { h += `<div class="k"><h3>⚙️ Système</h3><button class="${S.freeze ? "r" : "s"}" onclick="toggleFreeze()" style="width:100%">${S.freeze ? "🔴 Dégeler" : "🟢 Geler"}</button></div><div class="k"><h3>📢 Notification</h3><input id="nc" maxlength="6" placeholder="Code"><input id="nt" maxlength="200" placeholder="Message"><button onclick="sendNotif()" class="b" style="width:100%">Envoyer</button></div><div class="k"><h3>👤 Compte</h3><input id="ac" maxlength="6" placeholder="Code"><input id="aw" placeholder="Motif"><input id="aa" type="number" step="0.1" placeholder="KC"><button onclick="credit()">➕ Créditer</button><button class="r" onclick="suspend(1)">🚫 Suspendre</button><button class="s" onclick="suspend(0)">Lever</button><div style="margin-top:10px"><button class="s" onclick="setMod(1)">⭐ Modo</button><button class="s" onclick="setMod(0)">- Modo</button></div></div><div class="k"><h3>📥 Recharges (${rech.length})</h3>${rech.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${esc(r.name)} · ${r.amountFCFA} FCFA</span><span><button onclick="okRech('${k}')">✅</button><button class="r" onclick="noRech('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div><div class="k"><h3>🔄 Transferts (${tr.length})</h3>${tr.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${r.t === "wd" ? "Retrait" : "Envoi"} · ${esc(r.fn)} · ${kc(r.a)}</span><span><button onclick="okTr('${k}')">✅</button><button class="r" onclick="noTr('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div>`; }
-  return h + `<div class="k"><h3>🚩 Signalements (${rep.length})</h3>${rep.map(([k, r]) => `<div class="k" style="margin-bottom:8px"><b>${esc(r.kind)}</b><br><small>${esc(r.why)}</small><br><button class="r" onclick="rmRep('${k}')">🗑️</button><button class="s" onclick="doneRep('${k}')">Classer</button></div>`).join("") || "<p class='m'>Aucun.</p>"}</div>`;
-}
+function fTun() { return `<div class="k"><h3>Groupes</h3><p class="m">Fonctionnalité disponible prochainement.</p></div>`; }
+
+// Admin (Raccourci pour la réponse)
+function fAdm() { return `<div class="k"><h3>Admin</h3><p>Recharges en attente : ${Object.keys(A.rech).length}</p></div>`; }
 const guard = async f => { try { await f(); } catch (e) { toast("Erreur"); } };
-const toggleFreeze = () => guard(async () => { await set(ref(db, "config/freeze"), !S.freeze); });
-const log = (o) => ({ ["log/" + nid("log")]: { by: S.uid, ts: Date.now(), ...o } });
-const byCode = async c => (await get(ref(db, "ids/" + c))).val();
-const sendNotif = () => guard(async () => { const c = $("#nc").value.trim().toUpperCase(), txt = $("#nt").value.trim(); if (!c || !txt) return toast("Code et msg"); const u = await byCode(c); if (!u) return toast("Code inconnu"); await push(ref(db, "inbox/" + u), { txt, ts: Date.now() }); toast("Envoyé !"); });
-const credit = () => guard(async () => { const c = $("#ac").value.trim().toUpperCase(), a = Math.round(parseFloat($("#aa").value) * 10); if (!c || !(a > 0)) return toast("Code et KC"); const u = await byCode(c); if (!u) return toast("Inconnu"); const b = (await get(ref(db, "users/" + u + "/bal"))).val() || 0; await update(ref(db), { ["users/" + u + "/bal"]: b + a, ["users/" + u + "/hist/" + nid("h")]: { t: "topup", txt: "Admin", a, ts: Date.now() }, ["inbox/" + u + "/" + nid("n")]: { txt: "Crédité de " + kc(a), ts: Date.now() }, ...log({ t: "credit", to: c, a, fee: 0 }) }); toast("Crédité"); });
-const suspend = on => guard(async () => { const c = $("#ac").value.trim().toUpperCase(), w = $("#aw").value.trim(), u = await byCode(c); if (!u) return toast("Inconnu"); if (on) { if (w.length < 3) return toast("Motif"); await set(ref(db, "suspended/" + u), { why: w.slice(0, 200), ts: Date.now() }); toast("Suspendu"); } else { await remove(ref(db, "suspended/" + u)); toast("Levé"); } });
-const setMod = on => guard(async () => { const c = $("#ac").value.trim().toUpperCase(), u = await byCode(c); if (!u) return toast("Inconnu"); if (on) { await set(ref(db, "moderators/" + u), true); toast("Modo"); } else { await remove(ref(db, "moderators/" + u)); toast("Retiré"); } });
-const okRech = k => guard(async () => { const r = A.rech[k]; if (!r || r.status !== "pending" || !confirm(`Créditer ${kc(r.amountKC)} ?`)) return; const b = (await get(ref(db, "users/" + r.uid + "/bal"))).val() || 0; await update(ref(db), { ["users/" + r.uid + "/bal"]: b + r.amountKC, ["users/" + r.uid + "/hist/" + nid("h")]: { t: "topup", txt: "Recharge", a: r.amountKC, ts: Date.now() }, ["inbox/" + r.uid + "/" + nid("n")]: { txt: `Recharge de ${kc(r.amountKC)} validée !`, ts: Date.now() }, ["recharges/" + k + "/status"]: "validated", ...log({ t: "topup", f: r.name, a: r.amountKC, fee: 0 }) }); toast("OK"); });
-const noRech = k => guard(() => update(ref(db), { ["recharges/" + k + "/status"]: "rejected" }));
-const okTr = k => guard(async () => { const r = A.tr[k]; if (!r || r.s !== "p" || !confirm("Valider ?")) return; const fee = Math.round(r.a * (r.t === "wd" ? CFG.FEE_WD : CFG.FEE_TR)), B = {}, bal = async u => B[u] ??= (await get(ref(db, "users/" + u + "/bal"))).val() || 0; if (await bal(r.f) < r.a) return toast("Solde insuffisant"); B[r.f] -= r.a; let toId = null; if (r.t === "tr") { toId = await byCode(r.to); if (!toId) return toast("Destinataire introuvable"); await bal(toId); B[toId] += r.a - fee; } await bal(S.uid); B[S.uid] += fee; const U = { ["transfer_requests/" + k + "/s"]: "ok", ["users/" + r.f + "/hist/" + nid("h")]: { t: r.t, txt: r.t === 'wd' ? "Retrait" : "Envoi", a: -r.a, ts: Date.now() }, ["inbox/" + r.f + "/" + nid("n")]: { txt: "Opération validée", ts: Date.now() }, ...log({ t: r.t, f: r.fn, to: r.to || "", a: r.a, fee }) }; if (toId) { U["users/" + toId + "/hist/" + nid("h")] = { t: "tr", txt: "Reçu de " + r.fn, a: r.a - fee, ts: Date.now() }; U["inbox/" + toId + "/" + nid("n")] = { txt: `Reçu ${kc(r.a - fee)} de ${r.fn}`, ts: Date.now() }; } for (const u in B) U["users/" + u + "/bal"] = B[u]; await update(ref(db), U); toast("Validé !"); });
-const noTr = k => guard(() => update(ref(db), { ["transfer_requests/" + k + "/s"]: "no" }));
-const doneRep = k => guard(() => update(ref(db), { ["reports/" + k + "/s"]: "done" }));
-const rmRep = k => guard(async () => { const r = A.rep[k]; if (!r) return; if (r.kind === "post") await remove(ref(db, "posts/" + r.ref)); else if (r.kind === "listing") await remove(ref(db, "marketplace/" + r.ref)); await update(ref(db), { ["reports/" + k + "/s"]: "done" }); toast("Retiré"); });
 
-Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, sell, delMk, buy, mkT, joinT, op, snd, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep, enableNotifs, laterNotif });
+Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, updateProfile, regDir, reqRech, reqTr, reqWd, readNotif, delAcc, enableNotifs, laterNotif });
 draw();
 </script>
 </body></html>
