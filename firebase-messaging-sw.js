@@ -12,7 +12,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Affiche la notification système quand l'app est en arrière-plan
 messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title || "Mbolo";
   const notificationOptions = {
