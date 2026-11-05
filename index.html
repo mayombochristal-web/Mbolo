@@ -154,10 +154,7 @@ nav a.on i{transform:translateY(-3px)}
 const FB = window.FB, { ref, push, set, update, get, remove, onValue, query, limitToLast, db, auth } = FB;
 const $ = s => document.querySelector(s);
 const CFG = { AIRTEL: "24177765496", FEE_TR: 0.03, FEE_WD: 0.03, CLOUD: "vmqquxa8", PRESET: "mbolo_preset" };
-
-// ⚠️ CLÉ VAPID CORRIGÉE (Attention à la casse !) ⚠️
 const VAPID_KEY = "BBmQnlYW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_Yl8fhnIZc59-SgrkuafvU";
-
 const SW_URL = "firebase-messaging-sw.js";
 const ERR = { "auth/email-already-in-use": "Ce pseudo est déjà pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Pas de connexion internet." };
 
@@ -171,7 +168,7 @@ const nid = p => push(ref(db, p)).key;
 const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [] });
 
 let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
-let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false;
+let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false, lastBal = null;
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
 const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } };
 const busy = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
@@ -182,76 +179,51 @@ const notifState = () => (!("Notification" in window) || !("serviceWorker" in na
 async function getSW() { 
   if (swReg) return swReg; 
   if (!("serviceWorker" in navigator)) return null; 
-  try {
+  try { 
     await navigator.serviceWorker.register(SW_URL, { scope: "./" }); 
     swReg = await navigator.serviceWorker.ready; 
     return swReg; 
-  } catch(e) {
-    console.warn("SW registration failed", e);
-    return null;
-  }
+  } catch(e) { console.warn("SW registration failed", e); return null; }
 }
 
-async function localNotif(title, body) { if (notifState() !== "granted") return; try { const reg = await getSW(); await reg.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", vibrate: [200, 100, 200], tag: "mbolo-local" }); } catch (e) { } }
+// FONCTION CENTRALE POUR LES VRAIES NOTIFICATIONS
+async function notifyUser(title, body) { 
+  if (notifState() !== "granted") return; 
+  try { 
+    const reg = await getSW(); 
+    await reg.showNotification(title, { body, icon: "icon-192.png", badge: "icon-192.png", vibrate: [200, 100, 200], tag: "mbolo-event" }); 
+  } catch (e) {} 
+}
 
-// ⚠️ FONCTION SÉCURISÉE ⚠️
 async function saveToken(silent) {
   if (notifState() !== "granted" || !S.uid) return false;
   try {
     const messaging = await FB.msgP; 
     if (!messaging) { if (!silent) toast("Push non supporté."); return false; }
-    
-    // 1. Récupérer le Service Worker et vérifier qu'il est prêt
     const reg = await getSW();
-    if (!reg) { 
-      if (!silent) toast("Service Worker indisponible."); 
-      return false; 
-    }
-
-    // 2. Petit délai pour s'assurer que le SW est totalement activé
+    if (!reg) { if (!silent) toast("Service Worker indisponible."); return false; }
     await new Promise(resolve => setTimeout(resolve, 500));
-
-    // 3. Demander le token
-    const token = await FB.getToken(messaging, { 
-      vapidKey: VAPID_KEY, 
-      serviceWorkerRegistration: reg 
-    });
-    
+    const token = await FB.getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (!token) { if (!silent) toast("Erreur jeton."); return false; }
-    
     localStorage.setItem("mbolo_fcm_" + S.uid, token);
     const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val();
     if (cur !== token) await update(ref(db, "users/" + S.uid), { fcmToken: token });
-    
-    if (!fcmHooked) { 
-      fcmHooked = true; 
-      FB.onMessage(messaging, p => { 
-        const d = p.data || p.notification || {}; 
-        toast("🔔 " + (d.title || "Mbolo") + " : " + (d.body || "")); 
-      }); 
-    }
+    if (!fcmHooked) { fcmHooked = true; FB.onMessage(messaging, p => { const d = p.data || p.notification || {}; toast("🔔 " + (d.title || "Mbolo") + " : " + (d.body || "")); }); }
     return true;
-  } catch (e) {
-    console.error("Détail erreur FCM :", e); // Affichera la vraie cause dans la console
-    if (!silent) toast("Erreur FCM : " + (e.code || e.message)); 
-    return false;
-  }
+  } catch (e) { console.error("Détail FCM :", e); if (!silent) toast("Erreur FCM : " + (e.code || e.message)); return false; }
 }
 
 async function enableNotifs() {
   const st = notifState();
-  if (st === "unsupported") { toast("Non disponible (iOS: Ajouter à l'écran d'accueil)."); return; }
+  if (st === "unsupported") { toast("Non disponible sur ce navigateur."); return; }
   if (st === "denied") { toast("Bloqué. Cadenas 🔒 → Notifications → Autoriser."); return; }
   const p = st === "granted" ? "granted" : await Notification.requestPermission();
   if (p === "granted") { const ok = await saveToken(false); if (ok) toast("🔔 Notifications activées !"); }
   draw();
 }
-async function testNotif() { await localNotif("Mbolo", "Test réussi 🥁"); }
+
 function laterNotif() { notifLater = true; draw(); }
-function armAutoPrompt() {
-  if (notifAsked || notifState() !== "default") return;
-  document.addEventListener("click", () => { if (notifAsked || notifState() !== "default" || !S.uid) return; notifAsked = true; enableNotifs(); }, { capture: true, once: true });
-}
+function armAutoPrompt() { if (notifAsked || notifState() !== "default") return; document.addEventListener("click", () => { if (notifAsked || notifState() !== "default" || !S.uid) return; notifAsked = true; enableNotifs(); }, { capture: true, once: true }); }
 const notifBanner = () => (notifState() === "default" && !notifLater) ? `<div class="k" style="border:2px solid var(--y);text-align:center"><b>🔔 Reste informé</b><p class="m" style="margin:6px 0">Reçois une alerte quand tu reçois de l'argent ou un message.</p><button class="b" onclick="enableNotifs()" style="width:100%">Activer</button><button class="s" onclick="laterNotif()" style="width:100%">Plus tard</button></div>` : "";
 
 getSW().catch(e => console.warn("SW", e));
@@ -262,43 +234,13 @@ async function enc(k, t) { const iv = crypto.getRandomValues(new Uint8Array(12))
 async function dec(k, c) { try { const [a, b] = c.split("."); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(a) }, k, ub(b))); } catch (e) { return null; } }
 
 const shrink = f => new Promise(res => { const im = new Image(); im.onload = () => { const r = Math.min(1, 1280 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * r; c.height = im.height * r; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src); c.toBlob(b => res(b || f), "image/jpeg", 0.8); }; im.onerror = () => res(f); im.src = URL.createObjectURL(f); });
-async function upImg(f) {
-  toast("Envoi de l'image…");
-  try {
-    const fd = new FormData(); fd.append("file", await shrink(f)); fd.append("upload_preset", CFG.PRESET);
-    const j = await (await fetch(`https://api.cloudinary.com/v1_1/${CFG.CLOUD}/image/upload`, { method: "POST", body: fd })).json();
-    if (!j.secure_url) throw 0; return j.secure_url;
-  } catch (e) { toast("Échec de l'envoi de l'image"); return null; }
-}
+async function upImg(f) { toast("Envoi de l'image…"); try { const fd = new FormData(); fd.append("file", await shrink(f)); fd.append("upload_preset", CFG.PRESET); const j = await (await fetch(`https://api.cloudinary.com/v1_1/${CFG.CLOUD}/image/upload`, { method: "POST", body: fd })).json(); if (!j.secure_url) throw 0; return j.secure_url; } catch (e) { toast("Échec de l'envoi de l'image"); return null; } }
 const img = u => u ? `<img class="th" loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}">` : "";
 
-function nav() {
-  const T = [
-    ["feed", "🏠", "Accueil"], 
-    ["tun", "👥", "Communautés"], 
-    ["mk", "🛍️", "Marché"], 
-    ["w", "🔔", "Notifs"], 
-    ["contact", "👤", "Profil"]
-  ];
-  if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]);
-  $("#nv").innerHTML = S.uid && S.name && !S.susp ? T.map(t => `<a class="${tab == t[0] ? "on" : ""}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join("") : "";
-  const av = $("#hd-avatar");
-  if (S.name) { av.textContent = S.name.charAt(0).toUpperCase(); av.style.display = "flex"; }
-  else { av.style.display = "none"; }
-}
+function nav() { const T = [ ["feed", "🏠", "Accueil"], ["tun", "👥", "Communautés"], ["mk", "🛍️", "Marché"], ["w", "🔔", "Notifs"], ["contact", "👤", "Profil"] ]; if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]); $("#nv").innerHTML = S.uid && S.name && !S.susp ? T.map(t => `<a class="${tab == t[0] ? "on" : ""}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join("") : ""; const av = $("#hd-avatar"); if (S.name) { av.textContent = S.name.charAt(0).toUpperCase(); av.style.display = "flex"; } else { av.style.display = "none"; } }
 function go(t) { tab = t; openT = null; if (tunOff) { tunOff(); tunOff = null; } draw(); }
 const errBox = e => `<div class="k err">⚠️ ${esc(e.message || e)}<br><button onclick="out()">Se déconnecter</button></div>`;
-async function out() {
-  try {
-    const t = localStorage.getItem("mbolo_fcm_" + S.uid);
-    if (t) {
-      const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val();
-      if (cur === t) await update(ref(db, "users/" + S.uid), { fcmToken: null });
-      localStorage.removeItem("mbolo_fcm_" + S.uid);
-    }
-  } catch (e) { }
-  FB.signOut(auth);
-}
+async function out() { try { const t = localStorage.getItem("mbolo_fcm_" + S.uid); if (t) { const cur = (await get(ref(db, "users/" + S.uid + "/fcmToken"))).val(); if (cur === t) await update(ref(db, "users/" + S.uid), { fcmToken: null }); localStorage.removeItem("mbolo_fcm_" + S.uid); } } catch (e) { } FB.signOut(auth); }
 
 async function draw() {
   nav(); const v=$("#v");
@@ -307,10 +249,8 @@ async function draw() {
     if (!S.uid) { v.innerHTML = fAuth(); return; }
     if (S.susp) { v.innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><p class="m">Contacte l'administrateur.</p><button onclick="out()">Se déconnecter</button></div>`; return; }
     if (!S.name) { v.innerHTML = `<div class="k" style="text-align:center"><p>Préparation de ton compte…</p><button class="s" onclick="out()">Se déconnecter</button></div>`; return; }
-    
     const ban = (tab === "tun" && openT) ? "" : notifBanner();
     v.innerHTML = ban + await ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
-    
     if (tab === "tun" && openT) { const c = $("#cm"); if (c) c.onkeydown = e => { if (e.key === "Enter") snd(); }; renderMsgs(); }
   } catch (e) { console.error(e); v.innerHTML = errBox(e); }
 }
@@ -323,8 +263,7 @@ function fAuth() {
   ${amsg ? `<div class="err">${esc(amsg)}</div>` : ""}
   <input id="au" placeholder="Pseudo (ex: aissa)" autocapitalize="none" autocomplete="username">
   <input id="ap" type="password" placeholder="Mot de passe" autocomplete="${L ? "current-password" : "new-password"}">
-  ${L ? "" : `<details><summary class="m">Lire la charte</summary><small>Respecte les autres. 1 KC = 100 FCFA. Commission ${CFG.FEE_TR * 100}%. Ton WhatsApp n'est visible que dans l'annuaire.</small></details>
-  <label class="m" style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" id="tos" style="width:auto"> J'accepte la charte</label>`}
+  ${L ? "" : `<details><summary class="m">Lire la charte</summary><small>Respecte les autres. 1 KC = 100 FCFA. Commission ${CFG.FEE_TR * 100}%. Ton WhatsApp n'est visible que dans l'annuaire.</small></details><label class="m" style="display:flex;gap:8px;margin-top:8px"><input type="checkbox" id="tos" style="width:auto"> J'accepte la charte</label>`}
   <button id="ab" onclick="submitAuth()" style="width:100%;margin-top:15px">${L ? "Se connecter" : "Créer mon compte"}</button></div>`;
 }
 async function submitAuth() {
@@ -345,6 +284,7 @@ async function createProfile(u) {
   }
   return null;
 }
+
 async function initUser(u) {
   clearL(); S = fresh(); S.uid = u.uid;
   const g = async p => { try { return (await get(ref(db, p))).val(); } catch (e) { return null; } };
@@ -354,215 +294,116 @@ async function initUser(u) {
   S.name = p.name; S.code = p.code;
   try { S.tun = JSON.parse(localStorage["mbolo_tun_" + u.uid] || "{}"); } catch (e) { }
   
-  listen(ref(db, "users/" + u.uid + "/bal"), s => { S.bal = s.val() || 0; nav(); soft("w"); });
+  listen(ref(db, "users/" + u.uid + "/bal"), s => { 
+    const newBal = s.val() || 0; 
+    if (lastBal !== null && newBal !== lastBal) {
+      if (newBal > lastBal) notifyUser("💰 Crédit reçu", "Ton solde a augmenté de " + kc(newBal - lastBal) + ".");
+    }
+    lastBal = newBal; S.bal = newBal; nav(); soft("w"); 
+  });
+  
   listen(ref(db, "users/" + u.uid + "/hist"), s => { S.hist = toArr(s).sort((a,b) => b.ts - a.ts).slice(0, 20); soft("w"); });
+  
   let firstInbox = true;
-  listen(ref(db, "inbox/" + u.uid), s => { const n = toArr(s).sort((a,b) => b.ts - a.ts); if (!firstInbox && n.length > S.notifs.length) toast("🔔 " + (n[0]?.txt)); firstInbox = false; S.notifs = n; soft("w"); });
+  listen(ref(db, "inbox/" + u.uid), s => { 
+    const n = toArr(s).sort((a,b) => b.ts - a.ts); 
+    if (!firstInbox && n.length > S.notifs.length) {
+      const newMsg = n[0];
+      notifyUser("🔔 Notification Mbolo", newMsg.txt);
+    } 
+    firstInbox = false; S.notifs = n; soft("w"); 
+  });
+  
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
   listen(query(ref(db, "posts"), limitToLast(30)), s => { S.posts = toArr(s); soft("feed"); });
   listen(query(ref(db, "marketplace"), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
   listen(ref(db, "directory"), s => { S.dir = toArr(s); soft("contact"); });
-  if (S.admin) {
-    listen(ref(db, "recharges"), s => { A.rech = s.val() || {}; soft("adm"); });
-    listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); });
-  }
+  if (S.admin) { listen(ref(db, "recharges"), s => { A.rech = s.val() || {}; soft("adm"); }); listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); }); }
   if (S.admin || S.mod) listen(ref(db, "reports"), s => { A.rep = s.val() || {}; soft("adm"); });
-
+  
   draw();
   if (notifState() === "granted") saveToken(true); else armAutoPrompt();
 }
-FB.onAuthStateChanged(auth, u => {
-  ready = true;
-  if (u) { S.uid = u.uid; draw(); initUser(u).catch(e => { toast("Erreur de chargement"); }); }
-  else { clearL(); S = fresh(); draw(); }
-});
+
+FB.onAuthStateChanged(auth, u => { ready = true; if (u) { S.uid = u.uid; draw(); initUser(u).catch(e => { toast("Erreur de chargement"); }); } else { clearL(); S = fresh(); draw(); } });
 
 const setF = f => { feedF = f; draw(); };
 const badge = c => c === "edu" ? '<span class="bd">📚 Éducation</span>' : c === "com" ? '<span class="bd c">🛍️ Commerce</span>' : c === "ann" ? '<span class="bd a">📢 Officiel</span>' : "";
 
 function fFeed() {
   const P = S.posts.filter(p => feedF === "all" || p.cat === feedF).sort((a, b) => b.ts - a.ts);
-  return `
-  <div class="wallet-card" onclick="go('w')">
-    <div>
-      <div style="font-size:13px;opacity:.8">Mon portefeuille KC</div>
-      <div class="bal">${kc(S.bal)}</div>
-    </div>
-    <button class="btn-wallet" onclick="go('w');event.stopPropagation()">Découvrir</button>
-  </div>
-
+  return `<div class="wallet-card" onclick="go('w')"><div><div style="font-size:13px;opacity:.8">Mon portefeuille KC</div><div class="bal">${kc(S.bal)}</div></div><button class="btn-wallet" onclick="go('w');event.stopPropagation()">Découvrir</button></div>
   <h3 style="margin:0 0 10px;font-size:16px">Stories communautaires</h3>
-  <div class="stories-scroll">
-    <div class="story"><div class="img"><span style="font-size:24px">+</span></div><span>Ajouter</span></div>
-    <div class="story"><div class="img" style="background:#f0e6d2">📍</div><span>Vie locale</span></div>
-    <div class="story"><div class="img" style="background:#e2f0d9">🥁</div><span>Culture</span></div>
-    <div class="story"><div class="img" style="background:#d9e2f3">💼</div><span>Business</span></div>
-    <div class="story"><div class="img" style="background:#fce4d6">⚽</div><span>Sport</span></div>
-  </div>
-
-  <div class="tabs">
-    <button class="${feedF === "all" ? "on" : "s"}" onclick="setF('all')">Tout</button>
-    <button class="${feedF === "edu" ? "on" : "s"}" onclick="setF('edu')">📚 Éducation</button>
-    <button class="${feedF === "com" ? "on" : "s"}" onclick="setF('com')">🛍️ Commerce</button>
-  </div>
-
-  <div class="k">
-    <div class="post-header">
-      <div class="post-avatar">${S.name ? S.name.charAt(0).toUpperCase() : "?"}</div>
-      <div class="post-meta"><b>Mon espace</b></div>
-    </div>
-    <textarea id="px" rows="2" maxlength="1000" placeholder="Partage une info…"></textarea>
-    <input type="file" id="pimg" accept="image/*" style="font-size:12px;padding:8px">
-    <select id="pcat"><option value="gen">Discussion</option><option value="edu">📚 Éducation</option><option value="com">🛍️ Commerce</option>${S.admin ? '<option value="ann">📢 Officiel</option>' : ""}</select>
-    <button id="pb" onclick="pub()" style="width:100%">Publier</button>
-  </div>` +
-  (P.map(p => `<div class="k">
-    <div class="post-header">
-      <div class="post-avatar">${esc(p.n).charAt(0).toUpperCase()}</div>
-      <div class="post-meta"><b>${esc(p.n)} ${badge(p.cat)}</b><small>${ago(p.ts)}</small></div>
-    </div>
-    <div class="post-content">${esc(p.x)}</div>${img(p.thumb)}
-    <div class="reactions">
-      <button onclick="toast('❤️ J\\'aime !')">❤️ 24</button>
-      <button onclick="toast('😂 Haha !')">😂 8</button>
-      <button onclick="toast('🔥 En feu !')">🔥 12</button>
-      <button onclick="toast('👏 Bravo !')">👏 5</button>
-    </div>
-    <div class="post-actions">
-      <span style="cursor:pointer" onclick="toast('Commentaires bientôt disponibles')">💬 Commenter</span>
-      <span style="cursor:pointer" onclick="toast('Partage bientôt disponible')">↗️ Partager</span>
-      ${p.a === S.uid || S.admin || S.mod ? `<button onclick="delPost('${p.id}')">🗑️</button>` : ""}
-    </div>
-  </div>`).join("") || "<p class='m' style='text-align:center'>Aucune publication.</p>");
+  <div class="stories-scroll"><div class="story"><div class="img"><span style="font-size:24px">+</span></div><span>Ajouter</span></div><div class="story"><div class="img" style="background:#f0e6d2">📍</div><span>Vie locale</span></div><div class="story"><div class="img" style="background:#e2f0d9">🥁</div><span>Culture</span></div><div class="story"><div class="img" style="background:#d9e2f3">💼</div><span>Business</span></div><div class="story"><div class="img" style="background:#fce4d6">⚽</div><span>Sport</span></div></div>
+  <div class="tabs"><button class="${feedF === "all" ? "on" : "s"}" onclick="setF('all')">Tout</button><button class="${feedF === "edu" ? "on" : "s"}" onclick="setF('edu')">📚 Éducation</button><button class="${feedF === "com" ? "on" : "s"}" onclick="setF('com')">🛍️ Commerce</button></div>
+  <div class="k"><div class="post-header"><div class="post-avatar">${S.name ? S.name.charAt(0).toUpperCase() : "?"}</div><div class="post-meta"><b>Mon espace</b></div></div><textarea id="px" rows="2" maxlength="1000" placeholder="Partage une info…"></textarea><input type="file" id="pimg" accept="image/*" style="font-size:12px;padding:8px"><select id="pcat"><option value="gen">Discussion</option><option value="edu">📚 Éducation</option><option value="com">🛍️ Commerce</option>${S.admin ? '<option value="ann">📢 Officiel</option>' : ""}</select><button id="pb" onclick="pub()" style="width:100%">Publier</button></div>` +
+  (P.map(p => `<div class="k"><div class="post-header"><div class="post-avatar">${esc(p.n).charAt(0).toUpperCase()}</div><div class="post-meta"><b>${esc(p.n)} ${badge(p.cat)}</b><small>${ago(p.ts)}</small></div></div><div class="post-content">${esc(p.x)}</div>${img(p.thumb)}<div class="reactions"><button onclick="toast('❤️ J\\'aime !')">❤️ 24</button><button onclick="toast('😂 Haha !')">😂 8</button><button onclick="toast('🔥 En feu !')">🔥 12</button><button onclick="toast('👏 Bravo !')">👏 5</button></div><div class="post-actions"><span style="cursor:pointer" onclick="toast('Commentaires bientôt disponibles')">💬 Commenter</span><span style="cursor:pointer" onclick="toast('Partage bientôt disponible')">↗️ Partager</span>${p.a === S.uid || S.admin || S.mod ? `<button onclick="delPost('${p.id}')">🗑️</button>` : ""}</div></div>`).join("") || "<p class='m' style='text-align:center'>Aucune publication.</p>");
 }
 
 async function pub() {
-  const x = $("#px").value.trim(), f = $("#pimg").files[0];
-  if (!x) return toast("Écris un texte");
+  const x = $("#px").value.trim(), f = $("#pimg").files[0]; if (!x) return toast("Écris un texte");
   $("#pb").disabled = true;
-  try {
-    const d = { a: S.uid, n: S.name, x, cat: $("#pcat").value, ts: Date.now() };
-    if (f) { const u = await upImg(f); if (u) d.thumb = u; }
-    await push(ref(db, "posts"), d); toast("Publié !");
-  } catch (e) { toast("Refusé"); }
+  try { const d = { a: S.uid, n: S.name, x, cat: $("#pcat").value, ts: Date.now() }; if (f) { const u = await upImg(f); if (u) d.thumb = u; } await push(ref(db, "posts"), d); toast("Publié !"); } catch (e) { toast("Refusé"); }
   draw();
 }
 async function delPost(id) { if (confirm("Supprimer cette publication ?")) try { await remove(ref(db, "posts/" + id)); } catch (e) { toast("Refusé"); } }
 
 function fMk() {
   return `<div class="k" style="border-left:4px solid var(--g)"><h3>Mettre en vente</h3><input id="mt" maxlength="60" placeholder="Produit ou service"><input id="mp" type="number" min="5" step="1" placeholder="Prix en KC (min 5)"><textarea id="md" rows="2" maxlength="500" placeholder="Description…"></textarea><input type="file" id="mimg" accept="image/*" style="padding:8px"><button id="mb" onclick="sell()" style="width:100%">Publier</button></div>` +
-  (S.mk.sort((a, b) => b.ts - a.ts).map(l => `<div class="k" style="padding:0;overflow:hidden">
-    ${img(l.thumb)}
-    <div style="padding:16px">
-      <div class="row"><b>${esc(l.t)}</b><b style="color:var(--g);font-size:18px">${kc(l.d)}</b></div>
-      <small>Vendeur : ${esc(l.n)}</small><p style="margin:8px 0">${esc(l.x)}</p>
-      <div class="row">${l.a === S.uid ? '<small class="m">Ton annonce</small>' : `<button onclick="buy('${l.id}')" style="width:100%">Acheter</button>`}${l.a === S.uid || S.admin || S.mod ? `<button class="l" onclick="delMk('${l.id}')">🗑️</button>` : ""}</div>
-    </div>
-  </div>`).join("") || "<p class='m' style='text-align:center'>Aucune annonce.</p>");
+  (S.mk.sort((a, b) => b.ts - a.ts).map(l => `<div class="k" style="padding:0;overflow:hidden">${img(l.thumb)}<div style="padding:16px"><div class="row"><b>${esc(l.t)}</b><b style="color:var(--g);font-size:18px">${kc(l.d)}</b></div><small>Vendeur : ${esc(l.n)}</small><p style="margin:8px 0">${esc(l.x)}</p><div class="row">${l.a === S.uid ? '<small class="m">Ton annonce</small>' : `<button onclick="buy('${l.id}')" style="width:100%">Acheter</button>`}${l.a === S.uid || S.admin || S.mod ? `<button class="l" onclick="delMk('${l.id}')">🗑️</button>` : ""}</div></div></div>`).join("") || "<p class='m' style='text-align:center'>Aucune annonce.</p>");
 }
 async function sell() {
-  const t = $("#mt").value.trim(), p = parseFloat($("#mp").value), f = $("#mimg").files[0];
-  if (t.length < 3 || !(p >= 5)) return toast("Titre et prix (min 5 KC) requis");
+  const t = $("#mt").value.trim(), p = parseFloat($("#mp").value), f = $("#mimg").files[0]; if (t.length < 3 || !(p >= 5)) return toast("Titre et prix (min 5 KC) requis");
   $("#mb").disabled = true;
-  try {
-    const d = { a: S.uid, n: S.name, t, d: Math.round(p * 10), x: $("#md").value.trim(), ts: Date.now() };
-    if (f) { const u = await upImg(f); if (u) d.thumb = u; }
-    await push(ref(db, "marketplace"), d); toast("Annonce publiée !");
-  } catch (e) { toast("Refusé"); }
+  try { const d = { a: S.uid, n: S.name, t, d: Math.round(p * 10), x: $("#md").value.trim(), ts: Date.now() }; if (f) { const u = await upImg(f); if (u) d.thumb = u; } await push(ref(db, "marketplace"), d); toast("Annonce publiée !"); } catch (e) { toast("Refusé"); }
   draw();
 }
 async function delMk(id) { if (confirm("Retirer cette annonce ?")) try { await remove(ref(db, "marketplace/" + id)); } catch (e) { toast("Refusé"); } }
-async function buy(id) {
-  const l = S.mk.find(m => m.id === id); if (!l) return;
-  if (S.freeze) return toast("Opérations suspendues");
-  if (l.d > S.bal) return toast("Solde insuffisant");
-  if (!confirm(`Acheter « ${l.t} » pour ${kc(l.d)} ?`)) return;
-  try {
-    const to = (await get(ref(db, "users/" + l.a + "/code"))).val();
-    await push(ref(db, "transfer_requests"), { t: "tr", f: S.uid, fn: S.name, to, a: l.d, m: ("Achat: " + l.t).slice(0, 100), s: "p", ts: Date.now() });
-    toast("Demande envoyée !");
-  } catch (e) { toast("Refusé"); }
-}
+async function buy(id) { const l = S.mk.find(m => m.id === id); if (!l) return; if (S.freeze) return toast("Opérations suspendues"); if (l.d > S.bal) return toast("Solde insuffisant"); if (!confirm(`Acheter « ${l.t} » pour ${kc(l.d)} ?`)) return; try { const to = (await get(ref(db, "users/" + l.a + "/code"))).val(); await push(ref(db, "transfer_requests"), { t: "tr", f: S.uid, fn: S.name, to, a: l.d, m: ("Achat: " + l.t).slice(0, 100), s: "p", ts: Date.now() }); toast("Demande envoyée !"); } catch (e) { toast("Refusé"); } }
 
 const saveTun = () => localStorage.setItem("mbolo_tun_" + S.uid, JSON.stringify(S.tun));
 const TID = /^(CLS|BQT)-[A-Z0-9]{4}$/;
 function fTun() {
   if (openT) return chat();
   const box = (t, c, ti, lab) => `<div class="k" style="border-left:4px solid ${c}"><h3>${lab}</h3><input id="tn_${t}" placeholder="Nom"><input id="tp_${t}" type="password" placeholder="Clé secrète"><button onclick="mkT('${t}')" style="width:100%;background:${c}">Créer</button></div>`;
-  return box("edu", "#0d47a1", "Créer la classe", "📚 Créer une classe") + box("com", "#1b5e20", "Créer la boutique", "🛍️ Créer une boutique") +
-    `<div class="k"><h3>🔑 Rejoindre</h3><input id="ti" placeholder="ID (ex. CLS-AB12)"><input id="tq" type="password" placeholder="Clé secrète"><button onclick="joinT()" style="width:100%">Rejoindre</button></div><h3 style="margin-top:20px">Mes communautés</h3>` +
-    (Object.entries(S.tun).map(([i, t]) => `<div class="k" onclick="op('${i}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center"><div><b>${t.type === "com" ? "🛍️" : "📚"} ${esc(t.n)}</b><br><small>ID : ${esc(i)}</small></div><span style="font-size:20px;color:var(--m)">›</span></div>`).join("") || "<p class='m'>Aucune communauté.</p>");
+  return box("edu", "#0d47a1", "Créer la classe", "📚 Créer une classe") + box("com", "#1b5e20", "Créer la boutique", "🛍️ Créer une boutique") + `<div class="k"><h3>🔑 Rejoindre</h3><input id="ti" placeholder="ID (ex. CLS-AB12)"><input id="tq" type="password" placeholder="Clé secrète"><button onclick="joinT()" style="width:100%">Rejoindre</button></div><h3 style="margin-top:20px">Mes communautés</h3>` + (Object.entries(S.tun).map(([i, t]) => `<div class="k" onclick="op('${i}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center"><div><b>${t.type === "com" ? "🛍️" : "📚"} ${esc(t.n)}</b><br><small>ID : ${esc(i)}</small></div><span style="font-size:20px;color:var(--m)">›</span></div>`).join("") || "<p class='m'>Aucune communauté.</p>");
 }
-async function mkT(type) {
-  const n = $("#tn_" + type).value.trim(), p = $("#tp_" + type).value; if (!n || !p) return toast("Nom et clé requis");
-  const i = (type === "edu" ? "CLS-" : "BQT-") + genCode().slice(0, 4);
-  S.tun[i] = { n, type }; saveTun(); TK[i] = await tk(i, p); toast("Créé ! ID : " + i); op(i);
-}
-async function joinT() {
-  const i = $("#ti").value.trim().toUpperCase(), p = $("#tq").value;
-  if (!TID.test(i) || !p) return toast("ID ou clé invalide");
-  if (!S.tun[i]) { S.tun[i] = { n: "Tunnel " + i, type: i.startsWith("BQT") ? "com" : "edu" }; saveTun(); }
-  TK[i] = await tk(i, p); op(i);
-}
+async function mkT(type) { const n = $("#tn_" + type).value.trim(), p = $("#tp_" + type).value; if (!n || !p) return toast("Nom et clé requis"); const i = (type === "edu" ? "CLS-" : "BQT-") + genCode().slice(0, 4); S.tun[i] = { n, type }; saveTun(); TK[i] = await tk(i, p); toast("Créé ! ID : " + i); op(i); }
+async function joinT() { const i = $("#ti").value.trim().toUpperCase(), p = $("#tq").value; if (!TID.test(i) || !p) return toast("ID ou clé invalide"); if (!S.tun[i]) { S.tun[i] = { n: "Tunnel " + i, type: i.startsWith("BQT") ? "com" : "edu" }; saveTun(); } TK[i] = await tk(i, p); op(i); }
 async function op(i) {
   if (!TK[i]) { const p = prompt("Clé secrète"); if (!p) return; TK[i] = await tk(i, p); }
   openT = i; S.msgs = []; if (tunOff) tunOff();
   tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), s => {
-    const oldCount = S.msgs.length;
-    S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
+    const oldCount = S.msgs.length; S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
     const last = S.msgs[S.msgs.length - 1];
-    if (last && S.msgs.length > oldCount && oldCount > 0 && last.n !== S.name && document.hidden) {
-      dec(TK[i], last.c).then(t => { if (t) localNotif("Nouveau message", last.n + " : " + t.slice(0, 50)); });
-    }
+    if (last && S.msgs.length > oldCount && oldCount > 0 && last.n !== S.name && document.hidden) { dec(TK[i], last.c).then(t => { if (t) notifyUser("Nouveau message", last.n + " : " + t.slice(0, 50)); }); }
     renderMsgs();
   }, () => toast("Accès refusé"));
   draw();
 }
 function chat() {
   const t = S.tun[openT] || { n: "?" };
-  return `<div class="k" style="height:72vh;display:flex;flex-direction:column;padding:12px">
-    <div class="row" style="margin-bottom:10px"><button class="s" onclick="go('tun')">←</button><b>${esc(t.n)}</b><a href="https://wa.me/?text=${encodeURIComponent("Rejoins " + t.n + " sur Mbolo. ID : " + openT)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px">📤</button></a></div>
-    <div id="cb" style="flex:1;overflow-y:auto"></div>
-    <div class="row" style="margin-top:10px"><input id="cm" placeholder="Message…" style="margin:0"><button onclick="snd()" style="margin:0;padding:10px 15px">➤</button></div>
-  </div>`;
+  return `<div class="k" style="height:72vh;display:flex;flex-direction:column;padding:12px"><div class="row" style="margin-bottom:10px"><button class="s" onclick="go('tun')">←</button><b>${esc(t.n)}</b><a href="https://wa.me/?text=${encodeURIComponent("Rejoins " + t.n + " sur Mbolo. ID : " + openT)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px">📤</button></a></div><div id="cb" style="flex:1;overflow-y:auto"></div><div class="row" style="margin-top:10px"><input id="cm" placeholder="Message…" style="margin:0"><button onclick="snd()" style="margin:0;padding:10px 15px">➤</button></div></div>`;
 }
 async function renderMsgs() {
   const b = $("#cb"); if (!b || !openT) return; const h = [];
-  for (const m of S.msgs) {
-    const t = await dec(TK[openT], m.c), me = m.n === S.name;
-    h.push(`<div style="margin-bottom:12px;text-align:${me ? "right" : "left"}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}</small><br><span style="display:inline-block;padding:10px 14px;border-radius:16px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--l)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "🔒" : esc(t)}</span></div>`);
-  }
+  for (const m of S.msgs) { const t = await dec(TK[openT], m.c), me = m.n === S.name; h.push(`<div style="margin-bottom:12px;text-align:${me ? "right" : "left"}"><small>${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString("fr", { hour: "2-digit", minute: "2-digit" })}</small><br><span style="display:inline-block;padding:10px 14px;border-radius:16px;max-width:85%;text-align:left;background:${me ? "var(--g)" : "var(--l)"};color:${me ? "#fff" : "var(--t)"}">${t == null ? "🔒" : esc(t)}</span></div>`); }
   b.innerHTML = h.join("") || "<p class='m' style='text-align:center'>Début de la conversation.</p>"; b.scrollTop = b.scrollHeight;
 }
-async function snd() {
-  const i = $("#cm"), t = i.value.trim(); if (!t || !TK[openT]) return; i.value = "";
-  try { await push(ref(db, "tunnels/" + openT), { ts: Date.now(), n: S.name, c: await enc(TK[openT], t) }); } catch (e) { toast("Refusé"); }
-}
+async function snd() { const i = $("#cm"), t = i.value.trim(); if (!t || !TK[openT]) return; i.value = ""; try { await push(ref(db, "tunnels/" + openT), { ts: Date.now(), n: S.name, c: await enc(TK[openT], t) }); } catch (e) { toast("Refusé"); } }
 
 function fW() {
   const fz = S.freeze ? " disabled" : "";
-  const histHtml = S.hist.length ? S.hist.map(h => {
-    const c = h.t === "topup" ? "var(--g)" : (h.a > 0 ? "var(--g)" : "var(--d)");
-    return `<div class="h-item"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${c};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div>`;
-  }).join("") : "<p class='m'>Aucune transaction.</p>";
-
+  const histHtml = S.hist.length ? S.hist.map(h => { const c = h.t === "topup" ? "var(--g)" : (h.a > 0 ? "var(--g)" : "var(--d)"); return `<div class="h-item"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${c};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div>`; }).join("") : "<p class='m'>Aucune transaction.</p>";
   const notifHtml = S.notifs.length ? S.notifs.map(n => `<div class="notif"><div class="row"><span>${esc(n.txt)}</span><button class="l" onclick="readNotif('${n.id}')" style="color:var(--m)">✔</button></div><small>${ago(n.ts)}</small></div>`).join("") : "<p class='m'>Aucune notification.</p>";
   const ns = notifState();
-  const alertHtml = `<div class="k"><h3>📲 Alertes sur cet appareil</h3><p class="m">${ns === "granted" ? "✅ Activées." : ns === "denied" ? "🚫 Bloquées (cadenas)." : "Pas encore activées."}</p>${ns === "default" ? `<button class="b" onclick="enableNotifs()" style="width:100%">Activer</button>` : ""}${ns === "granted" ? `<button class="b" onclick="enableNotifs()">Sync</button><button class="s" onclick="testNotif()">Test</button>` : ""}</div>`;
-
-  return (S.freeze ? '<div class="err">⚠️ Opérations suspendues.</div>' : "") +
-    `<div class="wallet-card" style="flex-direction:column;align-items:flex-start;padding:20px">
-      <div style="font-size:14px;opacity:.8">Solde disponible</div>
-      <div class="bal" style="font-size:38px;margin:5px 0">${kc(S.bal)}</div>
-      <small style="opacity:.8">≈ ${fc(S.bal)} · 1 KC = 100 FCFA</small>
-    </div>
-  <div class="k" style="border-left:4px solid var(--y)"><h3>🔔 Mes Notifications</h3>${notifHtml}</div>
-  ${alertHtml}
-  <div class="k"><h3>🛒 Acheter des KC</h3>
-    <input id="ra" type="number" step="10" placeholder="Montant FCFA (min. 500)"><input id="rr" maxlength="40" placeholder="Réf. Airtel (optionnel)">
-    <button onclick="reqRech()"${fz} style="width:100%">Déclarer</button>
-    <a href="https://wa.me/${CFG.AIRTEL}?text=${encodeURIComponent("Bonjour, je veux des KC. Code: " + S.code)}" target="_blank"><button class="wa">💬 WhatsApp</button></a>
-  </div>
+  
+  // BANNIÈRE D'ACTIVATION (sans bouton test)
+  const alertHtml = `<div class="k"><h3>📲 Alertes sur cet appareil</h3><p class="m">${ns === "granted" ? "✅ Activées. Tu recevras des alertes automatiques." : ns === "denied" ? "🚫 Bloquées (cadenas)." : "Pas encore activées."}</p>${ns === "default" ? `<button class="b" onclick="enableNotifs()" style="width:100%">Activer</button>` : ""}${ns === "granted" ? `<button class="b" onclick="enableNotifs()">Synchroniser</button>` : ""}</div>`;
+  
+  return (S.freeze ? '<div class="err">⚠️ Opérations suspendues.</div>' : "") + `<div class="wallet-card" style="flex-direction:column;align-items:flex-start;padding:20px"><div style="font-size:14px;opacity:.8">Solde disponible</div><div class="bal" style="font-size:38px;margin:5px 0">${kc(S.bal)}</div><small style="opacity:.8">≈ ${fc(S.bal)} · 1 KC = 100 FCFA</small></div>
+  <div class="k" style="border-left:4px solid var(--y)"><h3>🔔 Mes Notifications</h3>${notifHtml}</div>${alertHtml}
+  <div class="k"><h3>🛒 Acheter des KC</h3><input id="ra" type="number" step="10" placeholder="Montant FCFA (min. 500)"><input id="rr" maxlength="40" placeholder="Réf. Airtel (optionnel)"><button onclick="reqRech()"${fz} style="width:100%">Déclarer</button><a href="https://wa.me/${CFG.AIRTEL}?text=${encodeURIComponent("Bonjour, je veux des KC. Code: " + S.code)}" target="_blank"><button class="wa">💬 WhatsApp</button></a></div>
   <div class="k"><h3>Envoyer des KC</h3><input id="wt" maxlength="6" placeholder="Code destinataire"><input id="wd" type="number" step="0.1" placeholder="Montant KC"><button onclick="reqTr()"${fz} style="width:100%">Envoyer</button></div>
   <div class="k"><h3>💸 Retirer</h3><input id="xk" type="number" step="0.1" placeholder="Montant KC (min 5)"><input id="xn" type="tel" maxlength="20" placeholder="Numéro Airtel"><button onclick="reqWd()"${fz} style="width:100%">Retirer</button></div>
   <div class="k" style="text-align:center"><h3>Mon Code</h3><b style="font-size:26px;letter-spacing:4px;color:var(--g)">${esc(S.code)}</b></div>
@@ -575,35 +416,20 @@ async function send(path, d, msg) { if (S.freeze) return toast("Opérations susp
 function reqRech() { const a = parseInt($("#ra").value); if (!(a >= 500) || a % 10) return toast("Montant invalide"); const d = { uid: S.uid, name: S.name, amountFCFA: a, amountKC: a / 10, status: "pending", ts: Date.now() }, r = $("#rr").value.trim(); if (r) d.ref = r; send("recharges", d, "Recharge déclarée."); }
 function reqTr() { const to = $("#wt").value.trim().toUpperCase(), a = Math.round(parseFloat($("#wd").value) * 10); if (!/^[A-Z0-9]{6}$/.test(to) || to === S.code) return toast("Code invalide"); if (!(a >= 1) || a > S.bal) return toast("Solde insuffisant"); send("transfer_requests", { t: "tr", f: S.uid, fn: S.name, to, a, m: "Transfert", s: "p", ts: Date.now() }, "Demande envoyée."); }
 function reqWd() { const a = Math.round(parseFloat($("#xk").value) * 10), n = $("#xn").value.trim(); if (!(a >= 50) || a > S.bal) return toast("Minimum 5 KC"); if (n.replace(/\D/g, "").length < 8) return toast("Numéro invalide"); send("transfer_requests", { t: "wd", f: S.uid, fn: S.name, a, m: n, s: "p", ts: Date.now() }, "Retrait demandé."); }
-async function delAcc() {
-  if (S.bal > 0) return toast("Solde doit être 0.");
-  if (!confirm("Supprimer DÉFINITIVEMENT ton compte ?")) return;
-  const u = auth.currentUser;
-  try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null, ["suspended/" + S.uid]: null }); await u.delete(); toast("Compte supprimé."); } catch (e) { toast("Erreur (reconnecte-toi)."); }
-}
+async function delAcc() { if (S.bal > 0) return toast("Solde doit être 0."); if (!confirm("Supprimer DÉFINITIVEMENT ton compte ?")) return; const u = auth.currentUser; try { await update(ref(db), { ["users/" + S.uid]: null, ["ids/" + S.code]: null, ["directory/" + S.uid]: null, ["suspended/" + S.uid]: null }); await u.delete(); toast("Compte supprimé."); } catch (e) { toast("Erreur (reconnecte-toi)."); } }
 
 const setSearch = v => { dirSearch = v.toLowerCase(); draw(); };
 function fContact() {
-  const me = S.dir.find(d => d.id === S.uid) || {};
-  let D = S.dir;
+  const me = S.dir.find(d => d.id === S.uid) || {}; let D = S.dir;
   if (dirSearch) D = D.filter(d => (d.n || "").toLowerCase().includes(dirSearch) || (d.qu || "").toLowerCase().includes(dirSearch) || (d.cat || "").includes(dirSearch));
-  return `<div class="k"><h3>📇 Ma carte</h3><input id="dn" maxlength="40" placeholder="Nom / Boutique" value="${esc(me.n)}"><select id="dc"><option value="edu">📚 Enseignant</option><option value="com"${me.cat === "com" ? " selected" : ""}>🛍️ Commerçant</option></select><input id="dq" maxlength="40" placeholder="Quartier" value="${esc(me.qu)}"><input id="dw" type="tel" placeholder="WhatsApp" value="${esc(me.wa)}"><label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto"> Visible dans l'annuaire</label><button onclick="regDir()" style="width:100%">Publier</button>${me.id ? '<button class="s" onclick="delDir()" style="width:100%">Retirer</button>' : ""}</div>
-  <h3>Annuaire</h3><input placeholder="🔍 Rechercher…" oninput="setSearch(this.value)" value="${esc(dirSearch)}">
-  ${D.sort((a, b) => b.ts - a.ts).map(c => `<div class="k" style="display:flex;justify-content:space-between;align-items:center"><div><b>${esc(c.n)}</b>${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small></div><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px 12px">💬</button></a></div>`).join("") || "<p class='m'>Aucun résultat.</p>"}`;
+  return `<div class="k"><h3>📇 Ma carte</h3><input id="dn" maxlength="40" placeholder="Nom / Boutique" value="${esc(me.n)}"><select id="dc"><option value="edu">📚 Enseignant</option><option value="com"${me.cat === "com" ? " selected" : ""}>🛍️ Commerçant</option></select><input id="dq" maxlength="40" placeholder="Quartier" value="${esc(me.qu)}"><input id="dw" type="tel" placeholder="WhatsApp" value="${esc(me.wa)}"><label class="m" style="display:flex;gap:8px;margin:8px 0"><input type="checkbox" id="dk" style="width:auto"> Visible dans l'annuaire</label><button onclick="regDir()" style="width:100%">Publier</button>${me.id ? '<button class="s" onclick="delDir()" style="width:100%">Retirer</button>' : ""}</div><h3>Annuaire</h3><input placeholder="🔍 Rechercher…" oninput="setSearch(this.value)" value="${esc(dirSearch)}">${D.sort((a, b) => b.ts - a.ts).map(c => `<div class="k" style="display:flex;justify-content:space-between;align-items:center"><div><b>${esc(c.n)}</b>${badge(c.cat)}<br><small>📍 ${esc(c.qu)}</small></div><a href="https://wa.me/${esc(c.wa)}" target="_blank"><button class="wa" style="width:auto;margin:0;padding:8px 12px">💬</button></a></div>`).join("") || "<p class='m'>Aucun résultat.</p>"}`;
 }
 async function regDir() { const n = $("#dn").value.trim(), wa = $("#dw").value.replace(/\D/g, ""); if (n.length < 2 || wa.length < 8 || wa.length > 15) return toast("Champs invalides"); if (!$("#dk").checked) return toast("Cochez la visibilité"); try { await set(ref(db, "directory/" + S.uid), { n, cat: $("#dc").value, qu: $("#dq").value.trim(), wa, ok: true, ts: Date.now() }); toast("Carte publiée !"); } catch (e) { toast("Refusé"); } }
 async function delDir() { try { await remove(ref(db, "directory/" + S.uid)); toast("Retiré"); } catch (e) { toast("Erreur"); } }
 
 function fAdm() {
-  const rech = Object.entries(A.rech).filter(([k, r]) => r.status === "pending"), tr = Object.entries(A.tr).filter(([k, r]) => r.s === "p"), rep = Object.entries(A.rep).filter(([k, r]) => r.s === "open");
-  let h = "";
-  if (S.admin) {
-    h += `<div class="k"><h3>⚙️ Système</h3><button class="${S.freeze ? "r" : "s"}" onclick="toggleFreeze()" style="width:100%">${S.freeze ? "🔴 Dégeler" : "🟢 Geler"}</button></div>
-    <div class="k"><h3>📢 Notification</h3><input id="nc" maxlength="6" placeholder="Code"><input id="nt" maxlength="200" placeholder="Message"><button onclick="sendNotif()" class="b" style="width:100%">Envoyer</button></div>
-    <div class="k"><h3>👤 Compte</h3><input id="ac" maxlength="6" placeholder="Code"><input id="aw" placeholder="Motif"><input id="aa" type="number" step="0.1" placeholder="KC"><button onclick="credit()">➕ Créditer</button><button class="r" onclick="suspend(1)">🚫 Suspendre</button><button class="s" onclick="suspend(0)">Lever</button><div style="margin-top:10px"><button class="s" onclick="setMod(1)">⭐ Modo</button><button class="s" onclick="setMod(0)">- Modo</button></div></div>
-    <div class="k"><h3>📥 Recharges (${rech.length})</h3>${rech.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${esc(r.name)} · ${r.amountFCFA} FCFA</span><span><button onclick="okRech('${k}')">✅</button><button class="r" onclick="noRech('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div>
-    <div class="k"><h3>🔄 Transferts (${tr.length})</h3>${tr.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${r.t === "wd" ? "Retrait" : "Envoi"} · ${esc(r.fn)} · ${kc(r.a)}</span><span><button onclick="okTr('${k}')">✅</button><button class="r" onclick="noTr('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div>`;
-  }
+  const rech = Object.entries(A.rech).filter(([k, r]) => r.status === "pending"), tr = Object.entries(A.tr).filter(([k, r]) => r.s === "p"), rep = Object.entries(A.rep).filter(([k, r]) => r.s === "open"); let h = "";
+  if (S.admin) { h += `<div class="k"><h3>⚙️ Système</h3><button class="${S.freeze ? "r" : "s"}" onclick="toggleFreeze()" style="width:100%">${S.freeze ? "🔴 Dégeler" : "🟢 Geler"}</button></div><div class="k"><h3>📢 Notification</h3><input id="nc" maxlength="6" placeholder="Code"><input id="nt" maxlength="200" placeholder="Message"><button onclick="sendNotif()" class="b" style="width:100%">Envoyer</button></div><div class="k"><h3>👤 Compte</h3><input id="ac" maxlength="6" placeholder="Code"><input id="aw" placeholder="Motif"><input id="aa" type="number" step="0.1" placeholder="KC"><button onclick="credit()">➕ Créditer</button><button class="r" onclick="suspend(1)">🚫 Suspendre</button><button class="s" onclick="suspend(0)">Lever</button><div style="margin-top:10px"><button class="s" onclick="setMod(1)">⭐ Modo</button><button class="s" onclick="setMod(0)">- Modo</button></div></div><div class="k"><h3>📥 Recharges (${rech.length})</h3>${rech.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${esc(r.name)} · ${r.amountFCFA} FCFA</span><span><button onclick="okRech('${k}')">✅</button><button class="r" onclick="noRech('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div><div class="k"><h3>🔄 Transferts (${tr.length})</h3>${tr.map(([k, r]) => `<div class="row" style="border-bottom:1px solid var(--l);padding:10px 0"><span>${r.t === "wd" ? "Retrait" : "Envoi"} · ${esc(r.fn)} · ${kc(r.a)}</span><span><button onclick="okTr('${k}')">✅</button><button class="r" onclick="noTr('${k}')">❌</button></span></div>`).join("") || "<p class='m'>Rien.</p>"}</div>`; }
   return h + `<div class="k"><h3>🚩 Signalements (${rep.length})</h3>${rep.map(([k, r]) => `<div class="k" style="margin-bottom:8px"><b>${esc(r.kind)}</b><br><small>${esc(r.why)}</small><br><button class="r" onclick="rmRep('${k}')">🗑️</button><button class="s" onclick="doneRep('${k}')">Classer</button></div>`).join("") || "<p class='m'>Aucun.</p>"}</div>`;
 }
 const guard = async f => { try { await f(); } catch (e) { toast("Erreur"); } };
@@ -621,7 +447,7 @@ const noTr = k => guard(() => update(ref(db), { ["transfer_requests/" + k + "/s"
 const doneRep = k => guard(() => update(ref(db), { ["reports/" + k + "/s"]: "done" }));
 const rmRep = k => guard(async () => { const r = A.rep[k]; if (!r) return; if (r.kind === "post") await remove(ref(db, "posts/" + r.ref)); else if (r.kind === "listing") await remove(ref(db, "marketplace/" + r.ref)); await update(ref(db), { ["reports/" + k + "/s"]: "done" }); toast("Retiré"); });
 
-Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, sell, delMk, buy, mkT, joinT, op, snd, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep, enableNotifs, testNotif, laterNotif });
+Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, sell, delMk, buy, mkT, joinT, op, snd, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep, enableNotifs, laterNotif });
 draw();
 </script>
 </body></html>
