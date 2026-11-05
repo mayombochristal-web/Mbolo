@@ -1,10 +1,11 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V14 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><meta name="color-scheme" content="light dark"><title>Mbolo V17 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, set, update, get, remove, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyBJOlSavLqAMLhRSTwk0pUh0oJiw5QBiko",
@@ -15,11 +16,14 @@ const app = initializeApp({
   messagingSenderId: "265201834213",
   appId: "1:265201834213:web:10d2593770cf1d02799c0c"
 });
+
 try {
   if (location.hostname === "localhost") self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider("6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B"), isTokenAutoRefreshEnabled: true });
 } catch (e) { console.warn("AppCheck", e); }
-window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser };
+
+const messaging = getMessaging(app);
+window.FB = { ref, push, set, update, get, remove, onValue, query, limitToLast, db: getDatabase(app), auth: getAuth(app), createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, messaging, getToken, onMessage };
 </script>
 <style>
 :root{--g:#0b6b3a;--y:#fcd116;--bg:#f6f4ec;--c:#fff;--t:#1d1d1b;--m:#6b6b66;--l:#ddd9cb;--d:#b3261e;--blue:#0d47a1}
@@ -47,14 +51,17 @@ nav a.on{color:var(--g);font-weight:800}nav i{display:block;font-style:normal;fo
 .err{background:#ffebee;color:#b71c1c;padding:12px;border-radius:10px;margin-bottom:10px;text-align:center}
 .h-item{display:flex;justify-content:space-between;border-bottom:1px solid var(--l);padding:8px 0;font-size:14px}
 .h-item:last-child{border:0}
+.notif{background:#fffde7;border-left:4px solid var(--y);padding:10px;margin-bottom:8px;border-radius:0 8px 8px 0;position:relative}
+.notif small{color:#8a6d3b}
 </style></head><body>
-<header><b>🥁 Mbolo V14</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V17</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main><div id="to"></div><nav id="nv"></nav>
 
 <script type="module">
 const FB = window.FB, { ref, push, set, update, get, remove, onValue, query, limitToLast, db, auth } = FB;
 const $ = s => document.querySelector(s);
 const CFG = { AIRTEL: "24177765496", FEE_TR: 0.03, FEE_WD: 0.03, CLOUD: "vmqquxa8", PRESET: "mbolo_preset" };
+const VAPID_KEY = "BBmQn1YW75r9L2S1FltmzwcA0MWX22RzOWQT_qDkX0zvztBz6_24tQmjyKMygEps2_YL8fhnIZc59-SgrkuafvU"; 
 const ERR = { "auth/email-already-in-use": "Ce pseudo est déjà pris.", "auth/invalid-credential": "Pseudo ou mot de passe incorrect.", "auth/weak-password": "Mot de passe trop faible.", "auth/network-request-failed": "Pas de connexion internet." };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -64,7 +71,7 @@ let tt; function toast(m) { const t = $("#to"); t.textContent = m; t.style.displ
 const toArr = s => { const v = s.val() || {}; return Object.keys(v).map(k => ({ id: k, ...v[k] })); };
 const genCode = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; return [...crypto.getRandomValues(new Uint8Array(6))].map(x => a[x % a.length]).join(""); };
 const nid = p => push(ref(db, p)).key;
-const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [] });
+const fresh = () => ({ uid: null, name: "", code: "", bal: 0, admin: false, mod: false, susp: null, freeze: false, posts: [], mk: [], dir: [], msgs: [], tun: {}, hist: [], notifs: [] });
 
 let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab = "feed", openT = null, feedF = "all", TK = {}, mode = "login", amsg = "", ready = false, dirSearch = "";
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
@@ -72,17 +79,11 @@ const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); 
 const busy = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
 const soft = t => { if (tab === t && !busy()) draw(); };
 
-// Notification locale
-const notif = (title, body) => { if (Notification.permission === "granted") new Notification(title, { body, icon: "icon-192.png" }); };
-const askNotif = () => { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); };
-
-// ---------- Chiffrement des tunnels ----------
 const E = new TextEncoder(), b64 = u => { u = new Uint8Array(u); let s = ""; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192)); return btoa(s); }, ub = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function tk(id, pw) { const m = await crypto.subtle.importKey("raw", E.encode(pw), "PBKDF2", false, ["deriveKey"]); return crypto.subtle.deriveKey({ name: "PBKDF2", salt: E.encode(id), iterations: 100000, hash: "SHA-256" }, m, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); }
 async function enc(k, t) { const iv = crypto.getRandomValues(new Uint8Array(12)); return b64(iv) + "." + b64(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, E.encode(t))); }
 async function dec(k, c) { try { const [a, b] = c.split("."); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: ub(a) }, k, ub(b))); } catch (e) { return null; } }
 
-// ---------- Images (Cloudinary) ----------
 const shrink = f => new Promise(res => { const im = new Image(); im.onload = () => { const r = Math.min(1, 1280 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = im.width * r; c.height = im.height * r; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src); c.toBlob(b => res(b || f), "image/jpeg", 0.8); }; im.onerror = () => res(f); im.src = URL.createObjectURL(f); });
 async function upImg(f) {
   toast("Envoi de l'image…");
@@ -94,7 +95,6 @@ async function upImg(f) {
 }
 const img = u => u ? `<img class="th" loading="lazy" src="${esc(String(u).replace("/upload/", "/upload/w_800,q_auto,f_auto/"))}">` : "";
 
-// ---------- Navigation ----------
 function nav() {
   const T = [["feed", "🌐", "Fil"], ["mk", "🏪", "Marché"], ["tun", "🔒", "Tunnels"], ["w", "💰", "Wallet"], ["contact", "📞", "Contact"]];
   if (S.admin || S.mod) T.push(["adm", "🛡️", "Admin"]);
@@ -117,7 +117,6 @@ async function draw() {
   } catch (e) { console.error(e); v.innerHTML = errBox(e); }
 }
 
-// ---------- Connexion / inscription ----------
 const setMode = m => { mode = m; amsg = ""; draw(); };
 function fAuth() {
   const L = mode === "login";
@@ -136,10 +135,7 @@ async function submitAuth() {
   if (w.length < 6) return toast("Mot de passe trop court");
   if (reg && !$("#tos").checked) return toast("Accepte la charte pour continuer");
   $("#ab").disabled = true;
-  try { 
-    await (reg ? FB.createUserWithEmailAndPassword : FB.signInWithEmailAndPassword)(auth, p + "@mbolo.app", w); 
-    askNotif();
-  }
+  try { await (reg ? FB.createUserWithEmailAndPassword : FB.signInWithEmailAndPassword)(auth, p + "@mbolo.app", w); }
   catch (e) { amsg = ERR[e.code] || e.code; draw(); }
 }
 
@@ -151,6 +147,7 @@ async function createProfile(u) {
   }
   return null;
 }
+
 async function initUser(u) {
   clearL(); S = fresh(); S.uid = u.uid;
   const g = async p => { try { return (await get(ref(db, p))).val(); } catch (e) { return null; } };
@@ -161,6 +158,11 @@ async function initUser(u) {
   try { S.tun = JSON.parse(localStorage["mbolo_tun_" + u.uid] || "{}"); } catch (e) { }
   listen(ref(db, "users/" + u.uid + "/bal"), s => { S.bal = s.val() || 0; nav(); soft("w"); });
   listen(ref(db, "users/" + u.uid + "/hist"), s => { S.hist = toArr(s).sort((a,b) => b.ts - a.ts).slice(0, 20); soft("w"); });
+  listen(ref(db, "inbox/" + u.uid), s => { 
+    const n = toArr(s).sort((a,b) => b.ts - a.ts);
+    if(n.length > S.notifs.length && S.notifs.length > 0) { toast("🔔 Nouvelle notification !"); }
+    S.notifs = n; soft("w"); 
+  });
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
   listen(query(ref(db, "posts"), limitToLast(30)), s => { S.posts = toArr(s); soft("feed"); });
   listen(query(ref(db, "marketplace"), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
@@ -170,6 +172,24 @@ async function initUser(u) {
     listen(ref(db, "transfer_requests"), s => { A.tr = s.val() || {}; soft("adm"); });
   }
   if (S.admin || S.mod) listen(ref(db, "reports"), s => { A.rep = s.val() || {}; soft("adm"); });
+
+  // --- FCM : RÉCUPÉRATION DU TOKEN PUSH ---
+  try {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        const token = await FB.getToken(FB.messaging, { vapidKey: VAPID_KEY });
+        if (token) {
+          await update(ref(db, "users/" + u.uid), { fcmToken: token });
+          console.log("✅ FCM Token sauvegardé:", token);
+        }
+      }
+    }
+    FB.onMessage(FB.messaging, (payload) => {
+      toast("🔔 " + (payload.notification?.title || "Notification") + " : " + (payload.notification?.body || ""));
+    });
+  } catch(e) { console.warn("Erreur FCM", e); }
+
   draw();
 }
 FB.onAuthStateChanged(auth, u => {
@@ -178,7 +198,6 @@ FB.onAuthStateChanged(auth, u => {
   else { clearL(); S = fresh(); draw(); }
 });
 
-// ---------- Fil ----------
 const setF = f => { feedF = f; draw(); };
 const badge = c => c === "edu" ? '<span class="b">📚 Éducation</span>' : c === "com" ? '<span class="b c">🛍️ Commerce</span>' : c === "ann" ? '<span class="b a">📢 Officiel</span>' : "";
 function fFeed() {
@@ -209,7 +228,6 @@ async function report(kind, id) {
   try { await push(ref(db, "reports"), { by: S.uid, kind, ref: id, why: why.trim().slice(0, 300), s: "open", ts: Date.now() }); toast("Signalement transmis"); } catch (e) { toast("Erreur"); }
 }
 
-// ---------- Marché ----------
 function fMk() {
   return `<div class="k"><h3>Mettre en vente</h3><input id="mt" maxlength="60" placeholder="Produit ou service"><input id="mp" type="number" min="5" step="1" placeholder="Prix en KC (minimum 5)"><textarea id="md" rows="2" maxlength="500" placeholder="Description…"></textarea><input type="file" id="mimg" accept="image/*"><button id="mb" onclick="sell()" style="width:100%">Publier l'annonce</button></div>` +
     (S.mk.sort((a, b) => b.ts - a.ts).map(l => `<div class="k"><div class="row"><b>${esc(l.t)}</b><b style="color:var(--g)">${kc(l.d)}</b></div><small>Vendeur : ${esc(l.n)}</small><p>${esc(l.x)}</p>${img(l.thumb)}
@@ -239,7 +257,6 @@ async function buy(id) {
   } catch (e) { toast("Refusé : " + (e.code || e.message)); }
 }
 
-// ---------- Tunnels ----------
 const saveTun = () => localStorage.setItem("mbolo_tun_" + S.uid, JSON.stringify(S.tun));
 const TID = /^(CLS|BQT)-[A-Z0-9]{4}$/;
 function fTun() {
@@ -265,11 +282,10 @@ async function op(i) {
   openT = i; S.msgs = []; if (tunOff) tunOff();
   tunOff = onValue(query(ref(db, "tunnels/" + i), limitToLast(50)), s => { 
     const newMsgs = toArr(s);
-    // Notification si nouveau message
     const oldCount = S.msgs.length;
     S.msgs = newMsgs.sort((a, b) => a.ts - b.ts);
     if (S.msgs.length > oldCount && oldCount > 0 && S.msgs[S.msgs.length-1].n !== S.name) {
-      dec(TK[i], S.msgs[S.msgs.length-1].c).then(t => { if(t) notif("Nouveau message", S.msgs[S.msgs.length-1].n + " : " + t.slice(0,50)); });
+      dec(TK[i], S.msgs[S.msgs.length-1].c).then(t => { if(t) new Notification("Nouveau message", { body: S.msgs[S.msgs.length-1].n + " : " + t.slice(0,50) }); });
     }
     renderMsgs(); 
   }, () => toast("Accès refusé"));
@@ -294,7 +310,6 @@ async function snd() {
 }
 async function delMsg(id) { if (confirm("Supprimer ce message ?")) try { await remove(ref(db, "tunnels/" + openT + "/" + id)); } catch (e) { toast("Refusé"); } }
 
-// ---------- Wallet ----------
 function fW() {
   const fz = S.freeze ? " disabled" : "";
   const histHtml = S.hist.length ? S.hist.map(h => {
@@ -302,8 +317,20 @@ function fW() {
     return `<div class="h-item"><div><b>${esc(h.txt)}</b><br><small class="m">${ago(h.ts)}</small></div><div style="color:${c};font-weight:bold">${h.a > 0 ? '+' : ''}${kc(h.a)}</div></div>`;
   }).join("") : "<p class='m'>Aucune transaction.</p>";
 
+  const notifHtml = S.notifs.length ? S.notifs.map(n => `
+    <div class="notif">
+      <div class="row">
+        <span>${esc(n.txt)}</span>
+        <button class="l" onclick="readNotif('${n.id}')" style="color:var(--m)">✔</button>
+      </div>
+      <small>${ago(n.ts)}</small>
+    </div>`).join("") : "<p class='m'>Aucune notification.</p>";
+
   return (S.freeze ? '<div class="err">⚠️ Opérations d\'argent suspendues par l\'administration.</div>' : "") +
     `<div class="k" style="text-align:center;background:var(--g);color:#fff"><h2 style="margin:0;font-size:34px">${kc(S.bal)}</h2><small style="color:#ffffffcc">≈ ${fc(S.bal)} · 1 KC = 100 FCFA</small></div>
+  
+  <div class="k" style="border-left:4px solid var(--y)"><h3>🔔 Mes Notifications</h3>${notifHtml}</div>
+  
   <div class="k" style="border-left:4px solid var(--y)"><h3>🛒 Acheter des KC</h3><p class="m">Envoie les FCFA par Airtel Money au +${CFG.AIRTEL}, puis déclare ta recharge.</p>
   <input id="ra" type="number" step="10" placeholder="Montant envoyé (FCFA, min. 500)"><input id="rr" maxlength="40" placeholder="Référence Airtel Money (optionnel)"><button onclick="reqRech()"${fz} style="width:100%">Déclarer ma recharge</button>
   <a href="https://wa.me/${CFG.AIRTEL}?text=${encodeURIComponent("Bonjour, je souhaite acheter des KC. Mon code Mbolo : " + S.code)}" target="_blank"><button class="wa">💬 Prévenir sur WhatsApp</button></a></div>
@@ -316,6 +343,7 @@ function fW() {
   <div class="k"><button class="s" onclick="delAcc()">⚠️ Supprimer mon compte (0 KC requis)</button></div>
   <button class="r" onclick="out()" style="width:100%">Se déconnecter</button>`;
 }
+async function readNotif(id) { try { await remove(ref(db, "inbox/" + S.uid + "/" + id)); } catch(e){} }
 async function send(path, d, msg) { if (S.freeze) return toast("Opérations suspendues"); try { await push(ref(db, path), d); toast(msg); draw(); } catch (e) { toast("Refusé : " + (e.code || e.message)); } }
 function reqRech() {
   const a = parseInt($("#ra").value); if (!(a >= 500) || a % 10) return toast("Montant invalide (500 min., multiple de 10)");
@@ -332,7 +360,6 @@ function reqWd() {
   if (!(a >= 50) || a > S.bal) return toast("Minimum 5 KC et solde suffisant"); if (n.replace(/\D/g, "").length < 8) return toast("Numéro invalide");
   send("transfer_requests", { t: "wd", f: S.uid, fn: S.name, a, m: n, s: "p", ts: Date.now() }, "Retrait demandé.");
 }
-
 async function delAcc() {
   if (S.bal > 0) return toast("Tu dois avoir 0 KC pour supprimer ton compte.");
   if (!confirm("Supprimer DÉFINITIVEMENT ton compte et toutes tes données ?")) return;
@@ -344,7 +371,6 @@ async function delAcc() {
   } catch (e) { toast("Erreur (reconnecte-toi et réessaie)."); }
 }
 
-// ---------- Contact / annuaire ----------
 const setSearch = v => { dirSearch = v.toLowerCase(); draw(); };
 function fContact() {
   const me = S.dir.find(d => d.id === S.uid) || {};
@@ -365,12 +391,12 @@ async function regDir() {
 }
 async function delDir() { try { await remove(ref(db, "directory/" + S.uid)); toast("Carte retirée"); } catch (e) { toast("Erreur"); } }
 
-// ---------- Admin / modération ----------
 function fAdm() {
   const rech = Object.entries(A.rech).filter(([k, r]) => r.status === "pending"), tr = Object.entries(A.tr).filter(([k, r]) => r.s === "p"), rep = Object.entries(A.rep).filter(([k, r]) => r.s === "open");
   let h = "";
   if (S.admin) {
     h += `<div class="k"><h3>⚙️ Système</h3><button class="${S.freeze ? "r" : "s"}" onclick="toggleFreeze()" style="width:100%">${S.freeze ? "🔴 Dégeler les opérations d'argent" : "🟢 Geler les opérations d'argent"}</button></div>
+    <div class="k"><h3>📢 Envoyer une notification</h3><input id="nc" maxlength="6" placeholder="Code destinataire (6 car.)"><input id="nt" maxlength="200" placeholder="Message (200 car. max)"><button onclick="sendNotif()" class="b" style="width:100%">Envoyer</button></div>
     <div class="k"><h3>👤 Gérer un compte</h3><input id="ac" maxlength="6" placeholder="Code (6 car.)"><input id="aw" placeholder="Motif (suspension)"><input id="aa" type="number" step="0.1" placeholder="KC à créditer"><button onclick="credit()">➕ Créditer</button><button class="r" onclick="suspend(1)">🚫 Suspendre</button><button class="s" onclick="suspend(0)">Lever</button>
     <div style="border-top:1px solid var(--l);margin-top:10px;padding-top:10px"><p class="m">Gérer les modérateurs :</p><button class="s" onclick="setMod(1)">⭐ Nommer Modo</button><button class="s" onclick="setMod(0)">Retirer Modo</button></div>
     </div>
@@ -384,11 +410,19 @@ const toggleFreeze = () => guard(async () => { await set(ref(db, "config/freeze"
 const log = (o) => ({ ["log/" + nid("log")]: { by: S.uid, ts: Date.now(), ...o } });
 const byCode = async c => (await get(ref(db, "ids/" + c))).val();
 
+const sendNotif = () => guard(async () => {
+  const c = $("#nc").value.trim().toUpperCase(), txt = $("#nt").value.trim();
+  if(!c || !txt) return toast("Code et message requis");
+  const u = await byCode(c); if(!u) return toast("Code inconnu");
+  await push(ref(db, "inbox/" + u), { txt, ts: Date.now() });
+  toast("Notification envoyée !");
+});
+
 const credit = () => guard(async () => {
   const c = $("#ac").value.trim().toUpperCase(), a = Math.round(parseFloat($("#aa").value) * 10); if (!c || !(a > 0)) return toast("Code et montant requis");
   const u = await byCode(c); if (!u) return toast("Code inconnu");
   const b = (await get(ref(db, "users/" + u + "/bal"))).val() || 0;
-  await update(ref(db), { ["users/" + u + "/bal"]: b + a, ["users/" + u + "/hist/" + nid("h")]: { t: "topup", txt: "Recharge admin", a, ts: Date.now() }, ...log({ t: "credit", to: c, a, fee: 0 }) }); toast("Crédité ✅");
+  await update(ref(db), { ["users/" + u + "/bal"]: b + a, ["users/" + u + "/hist/" + nid("h")]: { t: "topup", txt: "Recharge admin", a, ts: Date.now() }, ["inbox/" + u + "/" + nid("n")]: { txt: "Ton compte a été crédité de " + kc(a) + " par l'admin.", ts: Date.now() }, ...log({ t: "credit", to: c, a, fee: 0 }) }); toast("Crédité ✅");
 });
 
 const suspend = on => guard(async () => {
@@ -409,6 +443,7 @@ const okRech = k => guard(async () => {
   await update(ref(db), { 
     ["users/" + r.uid + "/bal"]: b + r.amountKC, 
     ["users/" + r.uid + "/hist/" + nid("h")]: { t: "topup", txt: "Recharge validée", a: r.amountKC, ts: Date.now() },
+    ["inbox/" + r.uid + "/" + nid("n")]: { txt: "✅ Ta recharge de " + kc(r.amountKC) + " a été validée !", ts: Date.now() },
     ["recharges/" + k + "/status"]: "validated", 
     ...log({ t: "topup", f: r.name, a: r.amountKC, fee: 0 }) 
   }); toast("Validé ✅");
@@ -429,9 +464,13 @@ const okTr = k => guard(async () => {
   const U = { 
     ["transfer_requests/" + k + "/s"]: "ok", 
     ["users/" + r.f + "/hist/" + nid("h")]: { t: r.t, txt: r.t === 'wd' ? "Retrait demandé" : "Envoi vers " + (r.to||""), a: -r.a, ts: Date.now() },
+    ["inbox/" + r.f + "/" + nid("n")]: { txt: r.t === 'wd' ? "💸 Ton retrait de " + kc(r.a) + " est validé." : "🔁 Ton envoi de " + kc(r.a) + " est validé.", ts: Date.now() },
     ...log({ t: r.t, f: r.fn, to: r.to || "", a: r.a, fee }) 
   };
-  if (toId) U["users/" + toId + "/hist/" + nid("h")] = { t: "tr", txt: "Reçu de " + r.fn, a: r.a - fee, ts: Date.now() };
+  if (toId) {
+    U["users/" + toId + "/hist/" + nid("h")] = { t: "tr", txt: "Reçu de " + r.fn, a: r.a - fee, ts: Date.now() };
+    U["inbox/" + toId + "/" + nid("n")] = { txt: "🎉 Tu as reçu " + kc(r.a - fee) + " de " + r.fn, ts: Date.now() };
+  }
   
   for (const u in B) U["users/" + u + "/bal"] = B[u];
   await update(ref(db), U); toast(r.t === "wd" ? "Validé : pense à payer par Airtel Money" : "Validé ✅");
@@ -445,7 +484,7 @@ const rmRep = k => guard(async () => {
   await update(ref(db), { ["reports/" + k + "/s"]: "done" }); toast("Contenu retiré");
 });
 
-Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, report, sell, delMk, buy, mkT, joinT, op, snd, delMsg, reqRech, reqTr, reqWd, delAcc, regDir, delDir, setSearch, toggleFreeze, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep });
+Object.assign(window, { go, out, setMode, submitAuth, setF, pub, delPost, report, sell, delMk, buy, mkT, joinT, op, snd, delMsg, reqRech, reqTr, reqWd, readNotif, delAcc, regDir, delDir, setSearch, toggleFreeze, sendNotif, credit, suspend, setMod, okRech, noRech, okTr, noTr, doneRep, rmRep });
 draw();
 </script>
 <script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
