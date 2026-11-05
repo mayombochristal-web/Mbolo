@@ -196,7 +196,6 @@ window.loginUser = async () => {
     }
   } catch (error) {
     btn.disabled = false; btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
-    // MODIFICATION ICI : Affiche le code d'erreur exact
     let errMsg = 'Erreur : ' + (error.code || error.message || 'inconnue');
     if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris.';
     else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
@@ -215,11 +214,17 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       const data = snap.val();
       S.me = { name: data.name };
       S.code = data.code;
+      
+      // --- ÉCOUTE EN TEMPS RÉEL DU SOLDE ---
       window.FB.onValue(window.FB.ref(window.FB.db, 'users/' + user.uid + '/bal'), (balSnap) => {
-        S.bal = balSnap.val() || 0;
-        $('#bl').textContent = kc(S.bal);
-        save();
-        if(tab === 'w') draw();
+        const newBal = balSnap.val() || 0;
+        if (S.bal !== newBal) {
+          S.bal = newBal;
+          $('#bl').textContent = kc(S.bal);
+          save();
+          if(tab === 'w') draw();
+          console.log('Solde mis à jour depuis Firebase :', S.bal);
+        }
       });
     }
     S.posts = []; S.mk = []; S.directory = [];
@@ -494,6 +499,7 @@ async function fW(){
   return `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
     <h2 style="margin:0;font-size:36px">${kc(S.bal)}</h2>
     <small style="color:rgba(255,255,255,0.8)">≈ ${fc(S.bal)}</small>
+    <button class="s" onclick="refreshBalance()" style="margin-top:15px;background:rgba(255,255,255,0.2);color:#fff;border:1px solid #fff">🔄 Rafraîchir le solde</button>
   </div>
   <div class="k" style="border-left:4px solid var(--y)">
     <h3>🛒 Acheter des KC</h3>
@@ -518,6 +524,21 @@ async function fW(){
     <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.code}');toast('Copié')" style="width:100%">Copier mon code</button>
   </div>
   <button class="danger" onclick="window.FB.signOut(window.FB.auth)" style="width:100%;margin-top:20px">Se déconnecter</button>`;
+}
+
+window.refreshBalance = async () => {
+  if(!S.uid) return;
+  toast('Rafraîchissement...');
+  try {
+    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'));
+    S.bal = snap.val() || 0;
+    $('#bl').textContent = kc(S.bal);
+    save();
+    draw();
+    toast('Solde mis à jour : ' + kc(S.bal));
+  } catch(e) {
+    toast('Erreur de rafraîchissement');
+  }
 }
 
 window.requestRecharge = async () => {
