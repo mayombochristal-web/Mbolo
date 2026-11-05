@@ -6,7 +6,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  // --- PILIER 3 : Import d'App Check ---
   import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 
   const firebaseConfig = {
@@ -21,10 +20,7 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  
-  // --- PILIER 3 : Ton vrai jeton de débogage ---
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = "517E65D7-EB66-4647-B3A1-B15DC7EBCBFC";
-  
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider('6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B'),
     isTokenAutoRefreshEnabled: true
@@ -200,7 +196,8 @@ window.loginUser = async () => {
     }
   } catch (error) {
     btn.disabled = false; btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
-    let errMsg = 'Une erreur est survenue.';
+    // MODIFICATION ICI : Affiche le code d'erreur exact
+    let errMsg = 'Erreur : ' + (error.code || error.message || 'inconnue');
     if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris.';
     else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
     authMsg = { type: 'error', text: errMsg }; draw();
