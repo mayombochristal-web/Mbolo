@@ -1,10 +1,10 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V11 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V12 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 
@@ -15,8 +15,7 @@
     projectId: "mbolo-81868",
     storageBucket: "mbolo-81868.firebasestorage.app",
     messagingSenderId: "265201834213",
-    appId: "1:265201834213:web:10d2593770cf1d02799c0c",
-    measurementId: "G-9WSKGNR6ZE"
+    appId: "1:265201834213:web:10d2593770cf1d02799c0c"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -28,7 +27,7 @@
 
   const db = getDatabase(app);
   const auth = getAuth(app);
-  window.FB = { ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast, db, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut };
+  window.FB = { ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast, remove, db, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut };
 </script>
 
 <style>
@@ -49,8 +48,9 @@ button.s{background:var(--l);color:var(--t);box-shadow:none}
 button.on{background:var(--g);color:#fff;border:2px solid var(--y)}
 button.tip{background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:6px 10px;font-size:13px}
 button.wa{background:#25D366;color:#fff;margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none;border-radius:10px;padding:12px;font-weight:bold}
-@media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 button.danger{background:var(--danger);color:#fff}
+button.warning{background:#f57c00;color:#fff}
+@media(prefers-color-scheme:dark){button.tip{background:#3a2f00;color:#ffeeba;border-color:#665600}}
 small,.m{color:var(--m);font-size:13px}
 h3{margin:8px 0;font-size:18px}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--l);z-index:5;overflow-x:auto}
@@ -59,7 +59,6 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 #to{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:25px;display:none;z-index:9;max-width:90%;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:600;text-align:center}
 .badge-edu{background:#e3f2fd;color:#0d47a1;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
 .badge-com{background:#e8f5e9;color:#1b5e20;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-right:5px}
-@media(prefers-color-scheme:dark){.badge-edu{background:#0d47a1;color:#e3f2fd}.badge-com{background:#1b5e20;color:#e8f5e9}}
 .p{color:var(--g);font-weight:800}.n{color:var(--danger);font-weight:800}
 .post-content{margin:10px 0;font-size:15px;line-height:1.5;white-space:pre-wrap}
 .post-thumb{width:100%;border-radius:10px;margin-top:8px;max-height:300px;object-fit:cover;display:block;background:#eee}
@@ -72,9 +71,11 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs{display:flex;border-bottom:2px solid var(--l);margin-bottom:15px}
 .auth-tabs button{flex:1;background:none;color:var(--m);box-shadow:none;border-bottom:3px solid transparent;border-radius:0;margin:0;padding:10px 0;font-size:16px}
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
+.suspend-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(179,38,30,0.95);color:white;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center;z-index:1000}
+.report-btn{background:none;color:var(--danger);font-size:12px;box-shadow:none;padding:5px;margin-top:5px}
 </style></head><body>
 
-<header><b>🥁 Mbolo V11</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V12</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -90,7 +91,7 @@ const CLOUDINARY_CLOUD_NAME = "vmqquxa8";
 const CLOUDINARY_PRESET = "mbolo_preset";
 
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
-S=S||{me:null,uid:null,code:null,bal:0,isAdmin:false,posts:[],mk:[],directory:[]};
+S=S||{me:null,uid:null,code:null,bal:0,isAdmin:false,isMod:false,isSuspended:false,suspendWhy:'',freeze:false,posts:[],mk:[],directory:[]};
 
 if(!S.posts) S.posts = [];
 if(!S.mk) S.mk = [];
@@ -120,49 +121,46 @@ async function uploadFile(file) {
 
   try {
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: 'POST',
-      body: formData
+      method: 'POST', body: formData
     });
     const data = await res.json();
     return data.secure_url;
-  } catch (e) {
-    console.error(e);
-    toast('Erreur upload Cloudinary');
-    return null;
-  }
+  } catch (e) { toast('Erreur image'); return null; }
 }
 
 function nav(){
-  if(S.isAdmin && !TABS.find(t=>t[0]==='adm')) { TABS.push(['adm','🛡️','Admin']); }
+  TABS = [['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
+  if(S.isAdmin || S.isMod) { TABS.push(['adm','🛡️','Admin']); }
   $('#nv').innerHTML=TABS.map(t=>`<a class="${tab==t[0]?'on':''}" onclick="go('${t[0]}')"><i>${t[1]}</i>${t[2]}</a>`).join('');
   $('#bl').textContent=kc(S.bal);
 }
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
 
-let authMode = 'login';
-let authMsg = { type: '', text: '' };
+let authMode = 'login', authMsg = { type: '', text: '' };
 
-window.switchAuthTab = (mode) => {
-  authMode = mode; authMsg = { type: '', text: '' }; draw();
-};
+window.switchAuthTab = (mode) => { authMode = mode; authMsg = { type: '', text: '' }; draw(); };
 
 async function fAuth(){
   let msgHtml = authMsg.text ? `<div class="msg-box ${authMsg.type === 'success' ? 'msg-success' : 'msg-error'}">${authMsg.text}</div>` : '';
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V11</h2>
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V12</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
     </div>
     ${msgHtml}
-    <input id="authUser" placeholder="Pseudo (lettres/chiffres, 3-20 car.)" autocomplete="username">
-    <input id="authPass" type="password" placeholder="Mot de passe (6 car. min)" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
-    <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">
-      ${isLogin ? 'Se connecter' : 'Créer mon compte'}
-    </button>
+    <input id="authUser" placeholder="Pseudo (lettres/chiffres, 3-20 car.)">
+    <input id="authPass" type="password" placeholder="Mot de passe (6 car. min)">
+    ${!isLogin ? `
+      <label style="display:flex;align-items:flex-start;margin-top:10px;font-size:13px">
+        <input type="checkbox" id="tosCheck" style="width:auto;margin-right:8px;margin-top:3px">
+        <span>J'accepte les Conditions d'Utilisation et la charte de bonne conduite de Mbolo.</span>
+      </label>
+    ` : ''}
+    <button id="btnLogin" onclick="loginUser()" style="width:100%;margin-top:15px">${isLogin ? 'Se connecter' : 'Créer mon compte'}</button>
   </div>`;
 }
 
@@ -170,44 +168,52 @@ window.loginUser = async () => {
   const pseudo = $('#authUser').value.trim().toLowerCase();
   const pass = $('#authPass').value;
   const btn = $('#btnLogin');
-  
-  if(!pseudo.match(/^[a-z0-9_]{3,20}$/)) { 
-    authMsg = { type: 'error', text: 'Pseudo invalide (3-20 car., pas d\'espaces)' }; draw(); return; 
-  }
-  if(pseudo === 'admin' || pseudo === 'support') {
-    authMsg = { type: 'error', text: 'Ce pseudo est réservé.' }; draw(); return;
-  }
-  if(pass.length < 6) { authMsg = { type: 'error', text: 'Mot de passe trop court (6 car. min)' }; draw(); return; }
-  
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Chargement...'; authMsg = { type: '', text: '' };
-  const email = `${pseudo}@mbolo.app`;
   const isLogin = authMode === 'login';
+  
+  if(!pseudo.match(/^[a-z0-9_]{3,20}$/)) return toast('Pseudo invalide (3-20 car.)');
+  if(pass.length < 6) return toast('Mot de passe trop court');
+  if(!isLogin && !$('#tosCheck').checked) return toast('Tu dois accepter les conditions d\'utilisation');
+  
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Chargement...';
+  const email = `${pseudo}@mbolo.app`;
 
   try {
     if(!isLogin) {
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
       const code = R(6);
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { name: pseudo, code: code, bal: 0, joined: Date.now() });
+      
+      // Création du profil avec les champs requis par les règles (dont 'tos')
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { 
+        name: pseudo, code: code, bal: 0, joined: Date.now(), tos: Date.now() 
+      });
       await window.FB.set(window.FB.ref(window.FB.db, 'ids/' + code), uid);
+      
       authMsg = { type: 'success', text: 'Compte créé ! Ton code : ' + code };
     } else {
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
     }
   } catch (error) {
     btn.disabled = false; btn.textContent = isLogin ? 'Se connecter' : 'Créer mon compte';
-    let errMsg = 'Erreur : ' + (error.code || error.message || 'inconnue');
-    if (error.code === 'auth/email-already-in-use') errMsg = '❌ Ce pseudo est déjà pris.';
-    else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') errMsg = '❌ Pseudo ou mot de passe incorrect.';
-    authMsg = { type: 'error', text: errMsg }; draw();
+    authMsg = { type: 'error', text: error.code || error.message }; draw();
   }
 };
 
 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
+    
+    // Vérification du statut Admin / Modo / Suspendu / Gel
     const adminSnap = await window.FB.get(window.FB.ref(window.FB.db, 'admins/' + user.uid));
+    const modSnap = await window.FB.get(window.FB.ref(window.FB.db, 'moderators/' + user.uid));
+    const suspSnap = await window.FB.get(window.FB.ref(window.FB.db, 'suspended/' + user.uid));
+    const configSnap = await window.FB.get(window.FB.ref(window.FB.db, 'config/freeze'));
+
     S.isAdmin = adminSnap.exists() && adminSnap.val() === true;
+    S.isMod = modSnap.exists();
+    S.isSuspended = suspSnap.exists();
+    S.suspendWhy = S.isSuspended ? suspSnap.val().why : '';
+    S.freeze = configSnap.val() === true;
 
     const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + user.uid));
     if(snap.exists()) {
@@ -215,24 +221,21 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       S.me = { name: data.name };
       S.code = data.code;
       
-      // --- ÉCOUTE EN TEMPS RÉEL DU SOLDE ---
       window.FB.onValue(window.FB.ref(window.FB.db, 'users/' + user.uid + '/bal'), (balSnap) => {
-        const newBal = balSnap.val() || 0;
-        if (S.bal !== newBal) {
-          S.bal = newBal;
-          $('#bl').textContent = kc(S.bal);
-          save();
-          if(tab === 'w') draw();
-          console.log('Solde mis à jour depuis Firebase :', S.bal);
-        }
+        S.bal = balSnap.val() || 0;
+        $('#bl').textContent = kc(S.bal);
+        save();
+        if(tab === 'w') draw();
       });
     }
+    
     S.posts = []; S.mk = []; S.directory = [];
     save(); draw();
     ecouterPosts(); ecouterMarche(); ecouterAnnuaire();
-    if(S.isAdmin) attachAdminListeners();
+    
+    if(S.isAdmin || S.isMod) attachAdminListeners();
   } else {
-    S.me = null; S.uid = null; S.code = null; S.isAdmin = false;
+    S.me = null; S.uid = null; S.isAdmin = false; S.isMod = false; S.isSuspended = false; S.freeze = false;
     S.posts = []; S.mk = []; S.directory = []; save(); draw();
   }
 });
@@ -240,18 +243,48 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
 async function draw(){
   try {
     nav(); const v=$('#v');
+    
+    // Écran de suspension
+    if(S.isSuspended) {
+      v.innerHTML = `<div class="suspend-screen">
+        <h2 style="font-size:40px">🚫</h2>
+        <h2>Compte Suspendu</h2>
+        <p>Motif : <strong>${esc(S.suspendWhy)}</strong></p>
+        <p class="m" style="color:#ffcdd2">Contacte l'administrateur pour plus d'informations.</p>
+        <button class="danger" onclick="window.FB.signOut(window.FB.auth)" style="margin-top:20px;background:white;color:var(--danger)">Se déconnecter</button>
+      </div>`;
+      return;
+    }
+
     if(!S.me){ v.innerHTML = await fAuth(); return; }
     v.innerHTML=await({feed:fFeed,mk:fMk,tun:fTun,w:fW,contact:fContact,adm:fAdm}[tab])();
-    if(tab === 'adm' && S.isAdmin) attachAdminListeners();
+    
+    if(tab === 'adm' && (S.isAdmin || S.isMod)) attachAdminListeners();
   } catch (error) {
     $('#v').innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--danger)">
       <h3 style="color:var(--danger)">⚠️ Erreur</h3>
-      <div style="font-size:12px;background:#ffebee;color:#b71c1c;padding:10px;border-radius:8px;margin:10px 0;text-align:left;overflow-x:auto">${error.message || error}</div>
-      <button class="danger" onclick="window.FB.signOut(window.FB.auth)" style="width:100%;margin-top:10px">Se déconnecter</button>
+      <div style="font-size:12px;background:#ffebee;color:#b71c1c;padding:10px;border-radius:8px;margin:10px 0;">${error.message}</div>
+      <button class="danger" onclick="window.FB.signOut(window.FB.auth)">Se déconnecter</button>
     </div>`;
   }
 }
 
+// --- SYSTEME DE SIGNALEMENT ---
+window.reportContent = async (kind, refId) => {
+  const why = prompt("Pourquoi signalez-vous ce contenu ? (Soyez précis)");
+  if(!why || why.length < 3) return toast('Motif trop court');
+  
+  try {
+    await window.FB.push(window.FB.ref(window.FB.db, 'reports'), {
+      by: S.uid, kind: kind, ref: refId, why: why, s: 'open', ts: Date.now()
+    });
+    toast('Signalement transmis aux modérateurs.');
+  } catch(e) { toast('Erreur'); }
+}
+
+// ==========================================
+// 1. FIL D'ACTUALITÉ
+// ==========================================
 async function fFeed(){
   let P=[...(S.posts||[])].filter(p => p && p.ts);
   if (feedFilter === 'edu') P = P.filter(p => p.cat === 'edu');
@@ -264,21 +297,23 @@ async function fFeed(){
       <button class="${feedFilter==='com'?'on':'s'}" onclick="setFilter('com')">🛍️ Commerce</button>
     </div>`;
 
-  const postForm = `<div class="k">
+  const postForm = !S.freeze ? `<div class="k">
     <textarea id="px" rows="2" placeholder="Partage une info..." maxlength="1000"></textarea>
     <input type="file" id="pimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
     <select id="pcat" style="margin-bottom:8px">
       <option value="gen">Discussion Générale</option>
       <option value="edu">📚 Éducation / Cours</option>
       <option value="com">🛍️ Commerce / Promo</option>
+      ${S.isAdmin ? `<option value="ann">📢 Annonce Officielle</option>` : ''}
     </select>
     <button onclick="publierFirebase()" style="width:100%">🚀 Publier</button>
-  </div>`;
+  </div>` : '<div class="k" style="text-align:center;color:var(--danger)">Le réseau est actuellement gelé par l'administration.</div>';
 
   const postList = P.map(p=>{
-    let badge = p.cat === 'edu' ? '<span class="badge-edu">📚 Éducation</span>' : (p.cat === 'com' ? '<span class="badge-com">🛍️ Commerce</span>' : '');
+    let badge = p.cat === 'edu' ? '<span class="badge-edu">📚 Éducation</span>' : (p.cat === 'com' ? '<span class="badge-com">🛍️ Commerce</span>' : (p.cat === 'ann' ? '<span class="badge-edu" style="background:#fcd116;color:#000">📢 Officiel</span>' : ''));
     let thumbHtml = p.thumb ? `<img src="${p.thumb}" class="post-thumb">` : '';
-    let delBtn = p.a === S.uid ? `<button class="s" onclick="deletePost('${p.id}')" style="margin-top:8px;color:var(--danger)">🗑️ Supprimer</button>` : '';
+    let delBtn = (p.a === S.uid || S.isAdmin || S.isMod) ? `<button class="s" onclick="deletePost('${p.id}')" style="color:var(--danger)">🗑️ Supprimer</button>` : '';
+    let repBtn = (p.a !== S.uid) ? `<button class="report-btn" onclick="reportContent('post', '${p.id}')">🚩 Signaler</button>` : '';
 
     return `<div class="k">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
@@ -286,7 +321,10 @@ async function fFeed(){
       </div>
       <div class="post-content">${esc(p.x)}</div>
       ${thumbHtml}
-      ${delBtn}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <div>${delBtn}</div>
+        <div>${repBtn}</div>
+      </div>
     </div>`;
   }).join('') || '<p class="m" style="text-align:center;padding:20px">Aucune publication.</p>';
 
@@ -294,12 +332,10 @@ async function fFeed(){
 }
 
 window.publierFirebase = async () => {
-  const texte = $('#px').value.trim();
-  const cat = $('#pcat').value;
-  const file = $('#pimg').files[0];
-  if (!texte && !file) return toast('Écris un texte ou ajoute une image');
-  if (texte.length > 1000) return toast('Texte trop long (1000 car. max)');
-
+  if(S.freeze) return;
+  const texte = $('#px').value.trim(), cat = $('#pcat').value, file = $('#pimg').files[0];
+  if (!texte && !file) return toast('Écris quelque chose');
+  
   let imgUrl = null;
   if (file) imgUrl = await uploadFile(file);
 
@@ -312,55 +348,54 @@ window.publierFirebase = async () => {
 
 window.deletePost = async (id) => {
   if(!confirm("Supprimer cette publication ?")) return;
-  try {
-    await window.FB.set(window.FB.ref(window.FB.db, 'posts/' + id), null);
-    toast('Supprimé');
-  } catch(e) { toast('Erreur'); }
+  await window.FB.remove(window.FB.ref(window.FB.db, 'posts/' + id));
+  toast('Supprimé');
 }
 
 function ecouterPosts() {
-  if (!window.FB) return;
   const q = window.FB.query(window.FB.ref(window.FB.db, 'posts'), window.FB.limitToLast(30));
   window.FB.onValue(q, (snapshot) => {
-    const data = snapshot.val();
-    S.posts = [];
-    if(data) {
-      Object.keys(data).forEach(key => {
-        const p = data[key];
-        S.posts.push({ id: key, a: p.a, n: p.n, x: p.x, cat: p.cat || 'gen', thumb: p.thumb, ts: p.ts });
-      });
-    }
-    save();
-    if (tab === 'feed') draw(); 
+    const data = snapshot.val(); S.posts = [];
+    if(data) Object.keys(data).forEach(key => S.posts.push({ id: key, ...data[key] }));
+    save(); if (tab === 'feed') draw(); 
   });
 }
 
+// ==========================================
+// 2. MARCHÉ (Prix minimum 5 KC)
+// ==========================================
 async function fMk(){
   const M = [...(S.mk||[])].filter(m => m && m.ts).sort((a,b)=>b.ts-a.ts);
-  return `<div class="k">
+  const form = !S.freeze ? `<div class="k">
     <h3>Mettre en vente</h3>
     <input id="mt" placeholder="Nom du produit" maxlength="60">
-    <input id="mp" type="number" step="1" placeholder="Prix en KC">
+    <input id="mp" type="number" step="1" min="5" placeholder="Prix en KC (Minimum 5 KC)">
     <textarea id="md" rows="2" placeholder="Description..." maxlength="500"></textarea>
     <input type="file" id="mimg" accept="image/*" style="font-size:12px;margin-bottom:5px">
     <button onclick="sell()" style="width:100%">Publier l'annonce</button>
-  </div>` +
+  </div>` : '';
+
+  return form +
   (M.map(l=>{
     let thumbHtml = l.thumb ? `<img src="${l.thumb}" class="post-thumb">` : '';
+    let delBtn = (l.a === S.uid || S.isAdmin || S.isMod) ? `<button class="s" onclick="deleteMk('${l.id}')" style="color:var(--danger)">🗑️ Retirer</button>` : `<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})">Acheter</button>`;
     return `<div class="k">
       <div style="display:flex;justify-content:space-between"><b>${esc(l.t)}</b> <span class="p">${kc(l.d)}</span></div>
       <small>Vendeur : ${esc(l.n)}</small>
       <p style="margin:8px 0;font-size:14px">${esc(l.x)}</p>
       ${thumbHtml}
-      ${l.a==S.uid?'<small class="m">C\'est ton annonce</small>':`<button onclick="buy('${l.id}','${l.a}','${esc(l.t)}',${l.d})" style="margin-top:8px">Acheter</button>`}
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <div>${delBtn}</div>
+        ${l.a !== S.uid ? `<button class="report-btn" onclick="reportContent('listing', '${l.id}')">🚩 Signaler</button>` : ''}
+      </div>
     </div>`;
   }).join('') || '<p class="m" style="text-align:center">Aucune annonce.</p>');
 }
 
 window.sell = async () => {
+  if(S.freeze) return;
   const t=$('#mt').value.trim(), p=parseFloat($('#mp').value), x=$('#md').value.trim(), file=$('#mimg').files[0];
-  if(!t || !p || p<=0) return toast('Titre et prix requis');
-  if(t.length < 3) return toast('Titre trop court');
+  if(!t || !p || p < 5) return toast('Titre et prix valide requis (Min 5 KC)');
   
   let imgUrl = null;
   if (file) imgUrl = await uploadFile(file);
@@ -373,22 +408,24 @@ window.sell = async () => {
   } catch(e) { toast('Erreur réseau'); }
 }
 
+window.deleteMk = async (id) => {
+  if(!confirm("Retirer cette annonce ?")) return;
+  await window.FB.remove(window.FB.ref(window.FB.db, 'marketplace/' + id));
+  toast('Retiré');
+}
+
 function ecouterMarche() {
-  if (!window.FB) return;
   const q = window.FB.query(window.FB.ref(window.FB.db, 'marketplace'), window.FB.limitToLast(30));
   window.FB.onValue(q, (snapshot) => {
-    const data = snapshot.val();
-    S.mk = [];
-    if(data) {
-      Object.keys(data).forEach(key => { S.mk.push({ id: key, ...data[key] }); });
-    }
-    save();
-    if (tab === 'mk') draw(); 
+    const data = snapshot.val(); S.mk = [];
+    if(data) Object.keys(data).forEach(key => S.mk.push({ id: key, ...data[key] }));
+    save(); if (tab === 'mk') draw(); 
   });
 }
 
 window.buy = async (id, sellerUid, title, price) => {
-  if(confirm(`Acheter "${title}" pour ${kc(price)} ?\nUne demande sera envoyée à l'admin.`)) {
+  if(S.freeze) return toast('Le système est gelé');
+  if(confirm(`Acheter "${title}" pour ${kc(price)} ?`)) {
     try {
       const sellerSnap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + sellerUid + '/code'));
       const sellerCode = sellerSnap.val();
@@ -396,11 +433,14 @@ window.buy = async (id, sellerUid, title, price) => {
       window.FB.push(window.FB.ref(window.FB.db, 'transfer_requests'), {
         t: 'wd', f: S.uid, fn: S.me.name, to: sellerCode, a: price, m: 'Achat: '+title, s: 'p', ts: Date.now()
       });
-      toast('Demande d\'achat envoyée à l\'admin !');
-    } catch(e) { toast('Erreur réseau'); }
+      toast('Demande envoyée !');
+    } catch(e) { toast('Erreur'); }
   }
 }
 
+// ==========================================
+// 3. TUNNELS
+// ==========================================
 async function fTun(){
   if(openT) return chat();
   return `
@@ -432,10 +472,9 @@ async function fTun(){
 }
 
 window.mkT = async (type) => {
-  const isEdu = type === 'edu';
   const n = $(`#tn_${type}`).value.trim(), p = $(`#tp_${type}`).value;
   if(!n || !p) return toast('Nom et clé requis');
-  const i = (isEdu ? 'CLS-' : 'BQT-') + R(4);
+  const i = (type === 'edu' ? 'CLS-' : 'BQT-') + R(4);
   S.tun[i] = { n: n, type: type }; 
   TK[i] = await tk(i, p); save(); toast('Créé ! ID : ' + i); op(i);
 }
@@ -450,11 +489,10 @@ window.joinT = async () => {
 window.op = async (i) => {
   if(!TK[i]){ const p=prompt('Entrez la clé secrète'); if(!p) return; TK[i]=await tk(i,p); }
   openT=i; draw();
-  if (!window.FB) return;
   window.FB.onChildAdded(window.FB.ref(window.FB.db, 'tunnels/'+i), (snap) => {
     const m = snap.val(); if(!m) return;
     if(!S.msgs) S.msgs = [];
-    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i, ...m }); if(openT === i) draw(); }
+    if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ id: snap.key, i, ...m }); if(openT === i) draw(); }
   });
 }
 
@@ -462,20 +500,19 @@ async function chat(){
   const i=openT, M=[], tunnelData = S.tun[i] || { n: 'Inconnu', type: 'edu' };
   for(const m of S.msgs.filter(x=>x.i==i).sort((a,b)=>a.ts-b.ts)){
     const t = await dec(TK[i], m.c);
+    const delBtn = (m.n === S.me.name || S.isAdmin || S.isMod) ? `<button class="report-btn" onclick="delMsg('${i}','${m.ts}')" style="color:#fff">🗑️</button>` : '';
     M.push(`<div style="margin-bottom:12px;text-align:${m.n===S.me.name?'right':'left'}">
-      <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()}</small>
+      <small style="display:block;margin-bottom:4px">${esc(m.n)} · ${new Date(m.ts).toLocaleTimeString()} ${delBtn}</small>
       <div style="display:inline-block;padding:10px 14px;border-radius:12px;background:${m.n===S.me.name?'var(--g)':'var(--l)'};color:${m.n===S.me.name?'#fff':'var(--t)'};max-width:80%">
         ${t==null?'<i class="m">🔒 Clé incorrecte</i>':esc(t)}
       </div>
     </div>`);
   }
-  const inviteTxt = encodeURIComponent(`Salut ! Rejoins mon espace "${tunnelData.n}" sur Mbolo. L'ID est : ${i}.`);
   return `<div class="k" style="height:70vh;display:flex;flex-direction:column">
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
       <button class="s" onclick="go('tun')">← Retour</button><b style="align-self:center">${esc(tunnelData.n)}</b><div></div>
     </div>
-    <a href="https://wa.me/?text=${inviteTxt}" target="_blank" style="text-decoration:none"><button class="wa" style="background:#128C7E">📤 Inviter par WhatsApp</button></a>
-    <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">${M.join('') || '<p class="m" style="text-align:center;margin-top:20px">Début de la conversation.</p>'}</div>
+    <div style="flex:1;overflow-y:auto;padding-right:5px;margin-top:10px" id="chat-box">${M.join('') || '<p class="m" style="text-align:center">Début de la conversation.</p>'}</div>
     <div style="display:flex;margin-top:10px;gap:8px">
       <input id="cm" placeholder="Message..." style="margin:0" onkeypress="if(event.key==='Enter')snd()">
       <button onclick="snd()" style="margin:0;padding:10px 16px">Envoyer</button>
@@ -483,273 +520,269 @@ async function chat(){
   </div>`;
 }
 
+window.delMsg = async (tid, ts) => {
+  if(!confirm("Supprimer ce message ?")) return;
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'tunnels/'+tid));
+  const msgs = snap.val();
+  for(let k in msgs){ if(msgs[k].ts == ts) { await window.FB.remove(window.FB.ref(window.FB.db, 'tunnels/'+tid+'/'+k)); break; } }
+  toast('Message supprimé');
+}
+
 window.snd = async () => {
   const t=$('#cm').value.trim(); if(!t)return;
-  if(t.length > 4000) return toast('Message trop long');
   const c = await enc(TK[openT], t);
   const m = { ts: Date.now(), n: S.me.name, c };
   window.FB.push(window.FB.ref(window.FB.db, 'tunnels/'+openT), m);
   $('#cm').value='';
-  if(!S.msgs.find(x=>x.ts === m.ts)) { S.msgs.push({ i: openT, ...m }); draw(); }
   setTimeout(()=>{const cb=$('#chat-box'); if(cb)cb.scrollTop=cb.scrollHeight;},100);
 }
 
+// ==========================================
+// 4. WALLET (Gelé si config.freeze)
+// ==========================================
 async function fW(){
-  const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon Code est : ${S.code}. Montant FCFA envoyé : `)}`;
-  return `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
+  const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon Code est : ${S.code}.`)}`;
+  const freezeMsg = S.freeze ? '<div class="k" style="background:#ffebee;color:#b71c1c;text-align:center;font-weight:bold">⚠️ Transactions suspendues temporairement par l\'administration.</div>' : '';
+
+  return freezeMsg + `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
     <h2 style="margin:0;font-size:36px">${kc(S.bal)}</h2>
     <small style="color:rgba(255,255,255,0.8)">≈ ${fc(S.bal)}</small>
-    <button class="s" onclick="refreshBalance()" style="margin-top:15px;background:rgba(255,255,255,0.2);color:#fff;border:1px solid #fff">🔄 Rafraîchir le solde</button>
+    <button class="s" onclick="refreshBalance()" style="margin-top:15px;background:rgba(255,255,255,0.2);color:#fff;border:1px solid #fff">🔄 Rafraîchir</button>
   </div>
   <div class="k" style="border-left:4px solid var(--y)">
     <h3>🛒 Acheter des KC</h3>
-    <p class="m" style="margin-bottom:10px">1 KC = 100 FCFA. Envoyez par Airtel Money au <b>${AIRTEL_NUMBER}</b>, puis cliquez sur WhatsApp.</p>
-    <a href="${buyLink}" target="_blank" style="text-decoration:none"><button class="wa">💬 Envoyer la demande (WhatsApp)</button></a>
-    
+    <a href="${buyLink}" target="_blank" style="text-decoration:none"><button class="wa" ${S.freeze?'disabled':''}>💬 Envoyer la demande (WhatsApp)</button></a>
     <div style="margin-top:15px;border-top:1px solid var(--l);padding-top:10px">
-      <p class="m">Déjà envoyé ? Déclare ton montant ici :</p>
-      <input id="reqAmt" type="number" step="10" placeholder="Montant FCFA (multiple de 10)">
-      <button class="s" onclick="requestRecharge()" style="width:100%">Déclarer la recharge</button>
+      <input id="reqAmt" type="number" step="10" placeholder="Montant FCFA" ${S.freeze?'disabled':''}>
+      <button class="s" onclick="requestRecharge()" style="width:100%" ${S.freeze?'disabled':''}>Déclarer la recharge</button>
     </div>
   </div>
   <div class="k">
     <h3>Demander un transfert</h3>
-    <input id="wt" placeholder="Code à 6 caractères (ex: A1B2C3)">
-    <input id="wd" type="number" step="0.1" placeholder="Montant en KC">
-    <button onclick="requestTransfer()" style="width:100%">Demander le transfert</button>
+    <input id="wt" placeholder="Code ami (6 car.)" ${S.freeze?'disabled':''}>
+    <input id="wd" type="number" step="0.1" placeholder="Montant KC" ${S.freeze?'disabled':''}>
+    <button onclick="requestTransfer()" style="width:100%" ${S.freeze?'disabled':''}>Demander le transfert</button>
   </div>
   <div class="k">
     <h3>Mon Code Mbolo</h3>
-    <textarea readonly rows="1" onclick="this.select()" style="font-size:14px;text-align:center;font-weight:bold">${S.code}</textarea>
-    <button class="s" onclick="navigator.clipboard&&navigator.clipboard.writeText('${S.code}');toast('Copié')" style="width:100%">Copier mon code</button>
+    <textarea readonly rows="1" onclick="this.select()" style="font-weight:bold;text-align:center">${S.code}</textarea>
   </div>
   <button class="danger" onclick="window.FB.signOut(window.FB.auth)" style="width:100%;margin-top:20px">Se déconnecter</button>`;
 }
 
-window.refreshBalance = async () => {
-  if(!S.uid) return;
-  toast('Rafraîchissement...');
-  try {
-    const snap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'));
-    S.bal = snap.val() || 0;
-    $('#bl').textContent = kc(S.bal);
-    save();
-    draw();
-    toast('Solde mis à jour : ' + kc(S.bal));
-  } catch(e) {
-    toast('Erreur de rafraîchissement');
-  }
-}
-
 window.requestRecharge = async () => {
+  if(S.freeze) return;
   const amt = parseInt($('#reqAmt').value);
-  if(!amt || amt < 500) return toast('Montant minimum 500 FCFA');
-  if(amt % 10 !== 0) return toast('Le montant doit être un multiple de 10');
-  const amountKC = amt / 10;
-  
-  try {
-    window.FB.push(window.FB.ref(window.FB.db, 'recharges'), {
-      uid: S.uid, name: S.me.name, amountFCFA: amt, amountKC: amountKC, status: 'pending', ts: Date.now()
-    });
-    toast('Demande envoyée ! L\'admin va vérifier.');
-    $('#reqAmt').value = '';
-  } catch(e) { toast('Erreur réseau'); }
+  if(!amt || amt < 500 || amt % 10 !== 0) return toast('Montant invalide');
+  await window.FB.push(window.FB.ref(window.FB.db, 'recharges'), { uid: S.uid, name: S.me.name, amountFCFA: amt, amountKC: amt/10, status: 'pending', ts: Date.now() });
+  toast('Demande envoyée.');
 }
 
 window.requestTransfer = async () => {
+  if(S.freeze) return;
   const to=$('#wt').value.trim().toUpperCase(), d=Math.round(parseFloat($('#wd').value)*10);
-  if(!to.match(/^[A-Z0-9]{6}$/)) return toast('Code destinataire invalide (6 caractères)');
-  if(!d || d<=0) return toast('Montant invalide');
-  if(to === S.code) return toast('Tu ne peux pas t\'envoyer des KC');
-  if(d > S.bal) return toast('Tu n\'as pas assez de KC');
+  if(!to.match(/^[A-Z0-9]{6}$/)) return toast('Code invalide');
+  if(d > S.bal) return toast('Solde insuffisant');
   
-  const targetSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + to));
-  if(!targetSnap.exists()) return toast('Destinataire introuvable');
-  
-  try {
-    window.FB.push(window.FB.ref(window.FB.db, 'transfer_requests'), {
-      t: 'tr', f: S.uid, fn: S.me.name, to: to, a: d, m: 'Transfert privé', s: 'p', ts: Date.now()
-    });
-    toast('Demande de transfert envoyée à l\'admin !');
-    $('#wt').value = ''; $('#wd').value = '';
-  } catch(e) { toast('Erreur réseau'); }
+  await window.FB.push(window.FB.ref(window.FB.db, 'transfer_requests'), {
+    t: 'tr', f: S.uid, fn: S.me.name, to: to, a: d, m: 'Transfert', s: 'p', ts: Date.now()
+  });
+  toast('Demande envoyée.');
 }
 
-let directoryFilter = 'all';
-
+// ==========================================
+// 5. CONTACT / ANNUAIRE (Avec 'ok: true')
+// ==========================================
 async function fContact(){
-  let D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
-  if(directoryFilter === 'edu') D = D.filter(c => c.cat === 'edu');
-  if(directoryFilter === 'com') D = D.filter(c => c.cat === 'com');
-
-  const filterHTML = `<div class="filters">
-      <button class="${directoryFilter==='all'?'on':'s'}" onclick="directoryFilter='all';draw()">Tout</button>
-      <button class="${directoryFilter==='edu'?'on':'s'}" onclick="directoryFilter='edu';draw()">📚 Profs</button>
-      <button class="${directoryFilter==='com'?'on':'s'}" onclick="directoryFilter='com';draw()">🛍️ Commerçants</button>
-    </div>`;
-
+  const D = [...(S.directory||[])].sort((a,b)=>b.ts-a.ts);
   const registerForm = `<div class="k">
     <h3>📇 Ma Carte de visite</h3>
     <input id="dn" placeholder="Nom / Boutique" maxlength="40">
     <select id="dcat"><option value="edu">📚 Enseignant</option><option value="com">🛍️ Commerçant</option></select>
     <input id="dqu" placeholder="Quartier / Ville" maxlength="40">
-    <input id="dwa" type="tel" placeholder="Numéro WhatsApp (chiffres uniquement)">
+    <input id="dwa" type="tel" placeholder="WhatsApp (ex: 241...)">
     <button onclick="registerDir()" style="width:100%">Publier ma carte</button>
   </div>`;
 
   const contactList = D.map(c => {
     let badge = c.cat === 'edu' ? '<span class="badge-edu">📚 Prof</span>' : '<span class="badge-com">🛍️ Commerce</span>';
-    let cleanWa = c.wa ? c.wa.replace(/\D/g,'') : '';
-    let waBtn = cleanWa ? `<a href="https://wa.me/${cleanWa}" target="_blank" style="text-decoration:none"><button class="wa">💬 WhatsApp</button></a>` : '';
+    let waBtn = c.wa ? `<a href="https://wa.me/${c.wa}" target="_blank" style="text-decoration:none"><button class="wa">💬 WhatsApp</button></a>` : '';
     return `<div class="k"><b>${esc(c.n)}</b> ${badge}<br><small>📍 ${esc(c.qu)}</small>${waBtn}</div>`;
   }).join('') || '<p class="m" style="text-align:center">Annuaire vide.</p>';
   
-  return filterHTML + registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire</h3>` + contactList;
+  return registerForm + `<h3 style="margin-top:20px;margin-bottom:10px">Annuaire</h3>` + contactList;
 }
 
 window.registerDir = async () => {
-  const n = $('#dn').value.trim(), cat = $('#dcat').value, qu = $('#dqu').value.trim(), wa = $('#dwa').value.trim();
-  const cleanWa = wa.replace(/\D/g,'');
-  if(!n || !cleanWa) return toast('Nom et WhatsApp requis');
-  if(cleanWa.length < 8 || cleanWa.length > 15) return toast('Numéro invalide');
+  const n = $('#dn').value.trim(), cat = $('#dcat').value, qu = $('#dqu').value.trim(), wa = $('#dwa').value.replace(/\D/g,'');
+  if(!n || wa.length < 8) return toast('Champs invalides');
   
-  const item = { n: n, cat: cat, qu: qu, wa: cleanWa, ts: Date.now() };
+  // Le champ 'ok: true' est requis par tes règles
+  const item = { n: n, cat: cat, qu: qu, wa: wa, ok: true, ts: Date.now() };
   
   try {
     await window.FB.set(window.FB.ref(window.FB.db, 'directory/' + S.uid), item);
-    toast('Carte publiée / mise à jour !');
-  } catch(e) { toast('Erreur réseau'); }
+    toast('Carte publiée !');
+  } catch(e) { toast('Erreur'); }
 }
 
 function ecouterAnnuaire() {
-  if (!window.FB) return;
   window.FB.onValue(window.FB.ref(window.FB.db, 'directory'), (snapshot) => {
-    const data = snapshot.val();
-    S.directory = [];
-    if(data) {
-      Object.keys(data).forEach(key => { S.directory.push(data[key]); });
-    }
-    save();
-    if (tab === 'contact') draw();
+    const data = snapshot.val(); S.directory = [];
+    if(data) Object.keys(data).forEach(key => S.directory.push(data[key]));
+    save(); if (tab === 'contact') draw();
   });
 }
 
+// ==========================================
+// 6. ADMIN / MODERATION (Tableau de bord complet)
+// ==========================================
 let isAdminListenerAttached = false;
 
 function attachAdminListeners() {
-  if(isAdminListenerAttached || !S.isAdmin) return;
+  if(isAdminListenerAttached) return;
   isAdminListenerAttached = true;
 
+  // 1. Recharges
   window.FB.onValue(window.FB.ref(window.FB.db, 'recharges'), (snap) => {
-    const data = snap.val(); const container = $('#admin-recharges');
-    if(!container) return;
-    if(!data) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
-    
+    const data = snap.val(); const c = $('#adm-recharges'); if(!c) return;
+    if(!data) { c.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
     const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.status === 'pending');
-    if(reqs.length === 0) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    if(!reqs.length) { c.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
     
-    container.innerHTML = reqs.map(r => `
-      <div class="k" style="border:1px solid var(--y);margin-bottom:8px;padding:10px">
-        <b>${esc(r.name)}</b> (Code: ${r.uid.substring(0,6)})<br>
-        <small>${r.amountFCFA} FCFA (${r.amountKC/10} KC)</small><br><small>${ago(r.ts)}</small>
-        <div style="margin-top:8px">
-          <button onclick="validateRecharge('${r.key}', '${r.uid}', ${r.amountKC}, this)" style="background:var(--g)">✅ Valider</button>
-          <button onclick="rejectRecharge('${r.key}')" class="danger">❌ Refuser</button>
-        </div>
-      </div>
-    `).join('');
+    c.innerHTML = reqs.map(r => `
+      <div class="k" style="border:1px solid var(--y);padding:10px">
+        <b>${esc(r.name)}</b> - ${r.amountFCFA} FCFA<br>
+        <button onclick="validateRecharge('${r.key}', '${r.uid}', ${r.amountKC}, this)" class="s" style="background:var(--g);color:#fff">✅ Valider</button>
+        <button onclick="rejectRecharge('${r.key}')" class="danger">❌</button>
+      </div>`).join('');
   });
 
+  // 2. Transferts
   window.FB.onValue(window.FB.ref(window.FB.db, 'transfer_requests'), (snap) => {
-    const data = snap.val(); const container = $('#admin-transfers');
-    if(!container) return;
-    if(!data) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
-    
+    const data = snap.val(); const c = $('#adm-transfers'); if(!c) return;
+    if(!data) { c.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
     const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.s === 'p');
-    if(reqs.length === 0) { container.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
+    if(!reqs.length) { c.innerHTML = '<p class="m">Aucune demande.</p>'; return; }
     
-    container.innerHTML = reqs.map(r => {
-      let txt = r.t === 'wd' ? `Achat : ${r.fn} envoie ${r.a/10} KC pour "${r.m}"` : `Transfert : ${r.fn} envoie ${r.a/10} KC au code ${r.to}`;
-      return `
-      <div class="k" style="border:1px solid #0d47a1;margin-bottom:8px;padding:10px">
+    c.innerHTML = reqs.map(r => {
+      let txt = r.t === 'wd' ? `Achat de ${r.fn} (${r.a/10} KC)` : `Transfert de ${r.fn} (${r.a/10} KC)`;
+      return `<div class="k" style="border:1px solid #0d47a1;padding:10px">
         <b>${txt}</b><br>
-        <small>${ago(r.ts)}</small>
-        <div style="margin-top:8px">
-          <button onclick="validateTransfer('${r.key}', '${r.f}', '${r.to}', ${r.a}, '${r.t}', this)" style="background:var(--g)">✅ Valider</button>
-          <button onclick="rejectTransfer('${r.key}')" class="danger">❌ Refuser</button>
-        </div>
+        <button onclick="validateTransfer('${r.key}', '${r.f}', '${r.to}', ${r.a}, '${r.t}', this)" class="s" style="background:var(--g);color:#fff">✅ Valider</button>
+        <button onclick="rejectTransfer('${r.key}')" class="danger">❌</button>
       </div>`;
     }).join('');
+  });
+
+  // 3. Signalements (Reports)
+  window.FB.onValue(window.FB.ref(window.FB.db, 'reports'), (snap) => {
+    const data = snap.val(); const c = $('#adm-reports'); if(!c) return;
+    if(!data) { c.innerHTML = '<p class="m">Aucun signalement.</p>'; return; }
+    const reqs = Object.keys(data).map(k => ({ key: k, ...data[k] })).filter(r => r.s === 'open');
+    if(!reqs.length) { c.innerHTML = '<p class="m">Aucun signalement en attente.</p>'; return; }
+    
+    c.innerHTML = reqs.map(r => `
+      <div class="k" style="border:1px solid var(--danger);padding:10px">
+        <b>${r.kind.toUpperCase()} signalé</b> (ID: ${r.ref})<br>
+        <small>Motif: ${esc(r.why)}</small><br>
+        <button onclick="resolveReport('${r.key}', 'done')" class="s" style="background:var(--g);color:#fff;margin-top:5px">✔️ Marquer traité</button>
+      </div>`).join('');
+  });
+
+  // 4. Config (Gel)
+  window.FB.onValue(window.FB.ref(window.FB.db, 'config/freeze'), (snap) => {
+    const isFrozen = snap.val() === true;
+    const btn = $('#btnFreeze');
+    if(btn) {
+      btn.textContent = isFrozen ? '🔴 Dégeler le système' : '🟢 Tout est normal';
+      btn.className = isFrozen ? 'danger' : 's';
+    }
   });
 }
 
 async function fAdm(){
-  if(!S.isAdmin) return '<div class="k"><h3>Accès refusé</h3></div>';
-  return `<div class="k">
-    <h3>🛡️ Demandes de Recharge</h3>
-    <div id="admin-recharges"><p class="m">Chargement...</p></div>
-  </div>
-  <div class="k">
-    <h3>🔄 Demandes de Transfert / Achat</h3>
-    <div id="admin-transfers"><p class="m">Chargement...</p></div>
-  </div>`;
+  if(!S.isAdmin && !S.isMod) return '<div class="k">Accès refusé</div>';
+  
+  let adminTools = '';
+  if(S.isAdmin) {
+    adminTools = `
+      <div class="k">
+        <h3>⚙️ Configuration Système</h3>
+        <button id="btnFreeze" onclick="toggleFreeze()" style="width:100%">Chargement...</button>
+      </div>
+      <div class="k">
+        <h3>🚫 Suspendre un utilisateur</h3>
+        <input id="suspId" placeholder="Code Mbolo (ex: A1B2C3)">
+        <input id="suspWhy" placeholder="Motif de la suspension">
+        <button onclick="suspendUser()" class="danger" style="width:100%">Suspendre</button>
+      </div>
+    `;
+  }
+
+  return adminTools + `
+    <div class="k"><h3>📥 Recharges en attente</h3><div id="adm-recharges"></div></div>
+    <div class="k"><h3>🔄 Transferts en attente</h3><div id="adm-transfers"></div></div>
+    <div class="k"><h3>🚩 Signalements</h3><div id="adm-reports"></div></div>
+  `;
 }
 
+window.toggleFreeze = async () => {
+  const snap = await window.FB.get(window.FB.ref(window.FB.db, 'config/freeze'));
+  const current = snap.val() === true;
+  await window.FB.set(window.FB.ref(window.FB.db, 'config/freeze'), !current);
+  toast(!current ? 'Système gelé' : 'Système dégelé');
+}
+
+window.suspendUser = async () => {
+  const code = $('#suspId').value.trim().toUpperCase();
+  const why = $('#suspWhy').value.trim();
+  if(!code || !why) return toast('Code et motif requis');
+  
+  const idSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + code));
+  if(!idSnap.exists()) return toast('Utilisateur introuvable');
+  
+  await window.FB.set(window.FB.ref(window.FB.db, 'suspended/' + idSnap.val()), { why: why, ts: Date.now() });
+  toast('Utilisateur suspendu.');
+}
+
+window.resolveReport = async (key, status) => {
+  await window.FB.update(window.FB.ref(window.FB.db, 'reports/' + key), { s: status });
+  toast('Signalement traité.');
+}
+
+// Récupération des fonctions Admin existantes (valider, refuser)
 window.validateRecharge = async (reqKey, userId, amountKC, btn) => {
   if(!confirm(`Créditer ${amountKC/10} KC ?`)) return;
-  btn.disabled = true; btn.textContent = '...';
+  btn.disabled = true;
+  await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + userId + '/bal'), (curr) => (curr || 0) + amountKC);
+  await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'validated' });
+  toast('Validé');
+}
+window.rejectRecharge = async (reqKey) => { await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'rejected' }); toast('Refusé'); }
+window.validateTransfer = async (reqKey, sId, rCode, amount, type, btn) => {
+  if(!confirm(`Effectuer l'opération ?`)) return;
+  btn.disabled = true;
+  const rSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + rCode));
+  if(!rSnap.exists()) return toast('Destinataire introuvable');
+  const rId = rSnap.val();
   
-  try {
-    await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + userId + '/bal'), (curr) => {
-      return (curr || 0) + amountKC;
-    });
-    await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'validated' });
-    toast('Recharge validée !');
-  } catch(e) { toast('Erreur'); btn.disabled = false; }
-}
+  await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + sId + '/bal'), (curr) => curr - amount);
+  let commission = 0;
+  if(type === 'wd') { commission = Math.round(amount * 0.03); }
+  const toCredit = amount - commission;
 
-window.rejectRecharge = async (reqKey) => {
-  await window.FB.update(window.FB.ref(window.FB.db, 'recharges/' + reqKey), { status: 'rejected' });
-  toast('Refusé.');
-}
-
-window.validateTransfer = async (reqKey, senderId, receiverCode, amount, type, btn) => {
-  if(!confirm(`Effectuer l'opération de ${amount/10} KC ?`)) return;
-  btn.disabled = true; btn.textContent = '...';
+  await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + rId + '/bal'), (curr) => (curr || 0) + toCredit);
+  if(commission > 0) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'), (curr) => (curr || 0) + commission);
   
-  try {
-    let receiverId = null;
-    if (receiverCode) {
-      const receiverIdSnap = await window.FB.get(window.FB.ref(window.FB.db, 'ids/' + receiverCode));
-      if(receiverIdSnap.exists()) receiverId = receiverIdSnap.val();
-    }
-
-    const senderBal = (await window.FB.get(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'))).val() || 0;
-    if (senderBal < amount) { toast('L\'expéditeur n\'a pas assez de KC !'); btn.disabled = false; return; }
-
-    if (type === 'wd') {
-      const commission = Math.round(amount * 0.03);
-      const amountForSeller = amount - commission;
-
-      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
-      if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amountForSeller);
-      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'), (curr) => (curr || 0) + commission);
-
-    } else {
-      await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
-      if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amount);
-    }
-    
-    await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'ok' });
-    toast('Transfert validé !');
-  } catch(e) { toast('Erreur : ' + e.message); btn.disabled = false; }
+  await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'ok' });
+  toast('Validé');
 }
+window.rejectTransfer = async (reqKey) => { await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'no' }); toast('Refusé'); }
 
-window.rejectTransfer = async (reqKey) => {
-  await window.FB.update(window.FB.ref(window.FB.db, 'transfer_requests/' + reqKey), { s: 'no' });
-  toast('Refusé.');
-}
-
+// ==========================================
+// LANCEMENT
+// ==========================================
 draw();
 </script>
 
