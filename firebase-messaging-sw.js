@@ -20,7 +20,7 @@ messaging.onBackgroundMessage((payload) => {
     icon: 'icon-192.png',
     badge: 'icon-192.png',
     vibrate: [200, 100, 200],
-    tag: d.tag || 'mbolo',
+    tag: 'mbolo',
     data: { url: './' }
   });
 });
@@ -34,7 +34,7 @@ self.addEventListener('notificationclick', (e) => {
   })());
 });
 
-const CACHE = 'mbolo-v23';
+const CACHE = 'mbolo-v24'; // Version incrémentée
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
