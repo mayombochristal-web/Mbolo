@@ -8,6 +8,15 @@
     ],
     "headers": [
       {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|css|woff|woff2|ttf|eot|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=604800"
+          }
+        ]
+      },
+      {
         "source": "/index.html",
         "headers": [
           {
@@ -22,15 +31,6 @@
           {
             "key": "Cache-Control",
             "value": "no-cache, no-store, must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|js|css|woff|woff2|ttf|eot|ico)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=604800"
           }
         ]
       }
