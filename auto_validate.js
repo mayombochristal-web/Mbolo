@@ -7,8 +7,33 @@ admin.initializeApp({
 });
 
 const db = admin.database();
-const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2'; // Ton UID d'admin
+const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2'; 
 const COMMISSION_RATE = 0.03;
+
+// Fonction pour envoyer la notification push via FCM
+async function sendPush(fcmToken, title, body) {
+  if (!fcmToken) return;
+  const serverKey = process.env.FCM_SERVER_KEY; 
+  if (!serverKey) {
+    console.log("⚠️ Clé FCM_SERVER_KEY manquante dans les secrets GitHub.");
+    return;
+  }
+  
+  try {
+    const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'key=' + serverKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to: fcmToken,
+        notification: { title: title, body: body }
+      })
+    });
+    if (!res.ok) console.error("Erreur FCM HTTP", await res.text());
+  } catch (e) { console.error("Erreur Push", e); }
+}
 
 async function processTransfers() {
   console.log("Recherche des demandes en attente...");
@@ -69,6 +94,33 @@ async function processTransfers() {
       // 4. Marquer comme validé
       await db.ref(`transfer_requests/${key}`).update({ s: 'ok' });
       console.log(`Succès : ${req.fn} a envoyé ${amount/10} KC au code ${req.to}.`);
+
+      // --- ENVOI DES NOTIFICATIONS PUSH ---
+      
+      // Récupérer le token du destinataire et de l'expéditeur
+      const receiverSnap = await db.ref(`users/${receiverId}`).once('value');
+      const senderSnap = await db.ref(`users/${req.f}`).once('value');
+      
+      const receiverData = receiverSnap.val();
+      const senderData = senderSnap.val();
+
+      // Notification au destinataire (le vendeur)
+      if (receiverData && receiverData.fcmToken) {
+        await sendPush(
+          receiverData.fcmToken, 
+          "💰 Argent reçu !", 
+          `Tu as reçu ${amountForSeller/10} KC de ${req.fn}.`
+        );
+      }
+
+      // Notification à l'expéditeur (l'acheteur)
+      if (senderData && senderData.fcmToken) {
+        await sendPush(
+          senderData.fcmToken, 
+          "✅ Opération validée", 
+          `Ton envoi de ${amount/10} KC vers ${req.to} a été validé.`
+        );
+      }
 
     } catch (error) {
       console.error(`Erreur sur la demande ${key}:`, error);
