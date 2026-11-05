@@ -7,32 +7,27 @@ admin.initializeApp({
 });
 
 const db = admin.database();
-const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2'; 
+const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2';
 const COMMISSION_RATE = 0.03;
 
-// Fonction pour envoyer la notification push via FCM
+// Fonction d'envoi moderne via Admin SDK (API v1)
 async function sendPush(fcmToken, title, body) {
   if (!fcmToken) return;
-  const serverKey = process.env.FCM_SERVER_KEY; 
-  if (!serverKey) {
-    console.log("⚠️ Clé FCM_SERVER_KEY manquante dans les secrets GitHub.");
-    return;
-  }
-  
   try {
-    const res = await fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'key=' + serverKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        to: fcmToken,
-        notification: { title: title, body: body }
-      })
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title: title, body: body },
+      webpush: {
+        notification: {
+          icon: '/Mbolo/icon-192.png',
+          vibrate: [200, 100, 200]
+        }
+      }
     });
-    if (!res.ok) console.error("Erreur FCM HTTP", await res.text());
-  } catch (e) { console.error("Erreur Push", e); }
+    console.log(`✅ Push envoyé à ${fcmToken.substring(0, 10)}...`);
+  } catch (e) { 
+    console.error("Erreur Push:", e.message); 
+  }
 }
 
 async function processTransfers() {
@@ -99,7 +94,7 @@ async function processTransfers() {
       
       // Récupérer le token du destinataire et de l'expéditeur
       const receiverSnap = await db.ref(`users/${receiverId}`).once('value');
-      const senderSnap = await db.ref(`users/${req.f}`).once('value');
+      const senderSnap = await db.ref(`users/${req.f}/`).once('value');
       
       const receiverData = receiverSnap.val();
       const senderData = senderSnap.val();
