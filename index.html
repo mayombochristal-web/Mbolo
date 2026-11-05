@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V10 - Kongo Coin</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Mbolo V11 - Kongo Coin</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -6,6 +6,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  // --- PILIER 3 : Import d'App Check ---
+  import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBJOlSavLqAMLhRSTwk0pUh0oJiw5QBiko",
@@ -19,12 +21,21 @@
   };
 
   const app = initializeApp(firebaseConfig);
+  
+  // --- PILIER 3 : Activation du mode débogage et initialisation d'App Check ---
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // À retirer plus tard pour la production
+  const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider('6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B'),
+    isTokenAutoRefreshEnabled: true
+  });
+
   const db = getDatabase(app);
   const auth = getAuth(app);
   window.FB = { ref, push, onChildAdded, onValue, set, update, runTransaction, get, query, limitToLast, db, auth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut };
 </script>
 
 <style>
+/* ... (Ton CSS existant reste identique) ... */
 :root{--g:#0b6b3a;--y:#fcd116;--bg:#f6f4ec;--c:#fff;--t:#1d1d1b;--m:#6b6b66;--l:#ddd9cb;--danger:#b3261e}
 @media(prefers-color-scheme:dark){:root{--bg:#12140f;--c:#1c1f18;--t:#f1efe6;--m:#a3a39a;--l:#33362d}}
 *{box-sizing:border-box;transition:background 0.2s,color 0.2s}
@@ -67,7 +78,7 @@ nav a.on{color:var(--g);font-weight:800}nav a i{display:block;font-style:normal;
 .auth-tabs button.active{color:var(--g);border-bottom-color:var(--g);font-weight:800}
 </style></head><body>
 
-<header><b>🥁 Mbolo V10</b><span id="bl">0.0 KC</span></header>
+<header><b>🥁 Mbolo V11</b><span id="bl">0.0 KC</span></header>
 <main id="v"></main>
 <div id="to"></div>
 <nav id="nv"></nav>
@@ -78,6 +89,10 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 
 const AIRTEL_NUMBER = '24177765496';
 const COMMISSION_RATE = 0.03;
+
+// --- PILIER 1 : Configuration Cloudinary ---
+const CLOUDINARY_CLOUD_NAME = "vmqquxa8"; 
+const CLOUDINARY_PRESET = "mbolo_preset";
 
 let S; try{S=JSON.parse(localStorage.mtt)}catch(e){}
 S=S||{me:null,uid:null,code:null,bal:0,isAdmin:false,posts:[],mk:[],directory:[]};
@@ -102,26 +117,26 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// --- UPLOAD FICHIERS (Miniatures) ---
-function generateThumbnail(file) {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) { resolve(null); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH; canvas.height = img.height * scale;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.5));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+// --- PILIER 1 : Nouvelle fonction d'upload Cloudinary ---
+async function uploadFile(file) {
+  if (!file) return null;
+  toast('Envoi de l\'image...');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    return data.secure_url;
+  } catch (e) {
+    console.error(e);
+    toast('Erreur upload Cloudinary');
+    return null;
+  }
 }
 
 function nav(){
@@ -145,7 +160,7 @@ async function fAuth(){
   const isLogin = authMode === 'login';
 
   return `<div class="k" style="padding:20px">
-    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V10</h2>
+    <h2 style="color:var(--g);text-align:center;margin-bottom:20px">Mbolo V11</h2>
     <div class="auth-tabs">
       <button class="${isLogin ? 'active' : ''}" onclick="switchAuthTab('login')">Se connecter</button>
       <button class="${!isLogin ? 'active' : ''}" onclick="switchAuthTab('register')">Créer un compte</button>
@@ -206,7 +221,6 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
     
-    // Vérification du statut Admin via le nœud "admins"
     const adminSnap = await window.FB.get(window.FB.ref(window.FB.db, 'admins/' + user.uid));
     S.isAdmin = adminSnap.exists() && adminSnap.val() === true;
 
@@ -303,10 +317,10 @@ window.publierFirebase = async () => {
   if (!texte && !file) return toast('Écris un texte ou ajoute une image');
   if (texte.length > 1000) return toast('Texte trop long (1000 car. max)');
 
-  let thumb = null;
-  if (file) thumb = await generateThumbnail(file);
+  let imgUrl = null;
+  if (file) imgUrl = await uploadFile(file);
 
-  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, thumb: thumb, ts: Date.now() };
+  const postData = { a: S.uid, n: S.me.name, x: texte, cat: cat, thumb: imgUrl, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'posts'), postData);
     $('#px').value = ''; $('#pimg').value = ''; toast('Publié !');
@@ -368,11 +382,11 @@ window.sell = async () => {
   if(!t || !p || p<=0) return toast('Titre et prix requis');
   if(t.length < 3) return toast('Titre trop court');
   
-  let thumb = null;
-  if (file) thumb = await generateThumbnail(file);
+  let imgUrl = null;
+  if (file) imgUrl = await uploadFile(file);
 
   const d = Math.round(p*10); 
-  const item = { a: S.uid, n: S.me.name, t, d, x, thumb, ts: Date.now() };
+  const item = { a: S.uid, n: S.me.name, t, d, x, thumb: imgUrl, ts: Date.now() };
   try {
     window.FB.push(window.FB.ref(window.FB.db, 'marketplace'), item);
     save(); draw(); toast('Annonce publiée !');
@@ -396,7 +410,6 @@ function ecouterMarche() {
 window.buy = async (id, sellerUid, title, price) => {
   if(confirm(`Acheter "${title}" pour ${kc(price)} ?\nUne demande sera envoyée à l'admin.`)) {
     try {
-      // On récupère le code du vendeur pour le mettre dans la demande
       const sellerSnap = await window.FB.get(window.FB.ref(window.FB.db, 'users/' + sellerUid + '/code'));
       const sellerCode = sellerSnap.val();
       
@@ -727,24 +740,18 @@ window.validateTransfer = async (reqKey, senderId, receiverCode, amount, type, b
       if(receiverIdSnap.exists()) receiverId = receiverIdSnap.val();
     }
 
-    // 1. Vérifier le solde de l'expéditeur
     const senderBal = (await window.FB.get(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'))).val() || 0;
     if (senderBal < amount) { toast('L\'expéditeur n\'a pas assez de KC !'); btn.disabled = false; return; }
 
     if (type === 'wd') {
-      // Achat sur le marché : on prend une commission de 3%
       const commission = Math.round(amount * 0.03);
       const amountForSeller = amount - commission;
 
-      // Débiter l'acheteur
       await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
-      // Créditer le vendeur
       if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amountForSeller);
-      // Créditer l'admin (commission)
       await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + S.uid + '/bal'), (curr) => (curr || 0) + commission);
 
     } else {
-      // Transfert simple
       await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + senderId + '/bal'), (curr) => curr - amount);
       if(receiverId) await window.FB.runTransaction(window.FB.ref(window.FB.db, 'users/' + receiverId + '/bal'), (curr) => (curr || 0) + amount);
     }
