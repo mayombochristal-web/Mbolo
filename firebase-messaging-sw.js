@@ -12,12 +12,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Affiche la notification quand l'app est en arrière-plan
+// Affiche la notification système quand l'app est en arrière-plan
 messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title || "Mbolo";
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/Mbolo/icon-192.png'
+    icon: '/Mbolo/icon-192.png',
+    badge: '/Mbolo/icon-192.png',
+    vibrate: [200, 100, 200]
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
