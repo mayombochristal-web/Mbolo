@@ -1,19 +1,44 @@
 {
-  "name": "Mbolo - Kongo Coin",
+  "name": "Mbolo Tam Tam",
   "short_name": "Mbolo",
-  "description": "Le réseau social du quartier. Échange, vends et apprends.",
+  "description": "Le réseau du quartier sans data. Échange, vends et discute.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#f5f7f3",
-  "theme_color": "#087c46",
+  "background_color": "#087C46",
+  "theme_color": "#087C46",
   "lang": "fr",
   "dir": "ltr",
-  "categories": ["social", "finance", "education", "shopping"],
+  "categories": ["social", "finance", "shopping", "communication"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mon portefeuille",
+      "short_name": "Wallet",
+      "description": "Voir mon solde KC et mes transactions",
+      "url": "./?tab=w",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Marché",
+      "short_name": "Marché",
+      "description": "Parcourir les annonces du quartier",
+      "url": "./?tab=mk",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Groupes",
+      "short_name": "Groupes",
+      "description": "Ouvrir mes tunnels chiffrés",
+      "url": "./?tab=tun",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
