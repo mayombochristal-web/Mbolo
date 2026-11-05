@@ -22,8 +22,10 @@
 
   const app = initializeApp(firebaseConfig);
   
-  // --- PILIER 3 : Activation du mode débogage et initialisation d'App Check ---
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; // À retirer plus tard pour la production
+  // --- PILIER 3 : Jeton de débogage FIXE pour ton téléphone ---
+  // C'est ce code que tu vas copier dans Firebase
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d";
+  
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider('6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B'),
     isTokenAutoRefreshEnabled: true
@@ -35,7 +37,6 @@
 </script>
 
 <style>
-/* ... (Ton CSS existant reste identique) ... */
 :root{--g:#0b6b3a;--y:#fcd116;--bg:#f6f4ec;--c:#fff;--t:#1d1d1b;--m:#6b6b66;--l:#ddd9cb;--danger:#b3261e}
 @media(prefers-color-scheme:dark){:root{--bg:#12140f;--c:#1c1f18;--t:#f1efe6;--m:#a3a39a;--l:#33362d}}
 *{box-sizing:border-box;transition:background 0.2s,color 0.2s}
@@ -90,7 +91,6 @@ const AL={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DAY=
 const AIRTEL_NUMBER = '24177765496';
 const COMMISSION_RATE = 0.03;
 
-// --- PILIER 1 : Configuration Cloudinary ---
 const CLOUDINARY_CLOUD_NAME = "vmqquxa8"; 
 const CLOUDINARY_PRESET = "mbolo_preset";
 
@@ -108,7 +108,6 @@ const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const ago=t=>new Date(t).toLocaleString('fr',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 function toast(m){const t=$('#to');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2800)}
 
-// --- CRYPTOGRAPHIE ---
 const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function tk(tid,pw){const m=await crypto.subtle.importKey('raw',E.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt:E.encode(tid),iterations:100000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function enc(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));return b64(iv)+'.'+b64(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,E.encode(t)))}
@@ -117,7 +116,6 @@ async function dec(k,c){try{const[a,b]=c.split('.');return new TextDecoder().dec
 const TK={}; let tab='feed', openT=null, feedFilter='all';
 let TABS=[['feed','🌐','Fil'],['mk','🏪','Marché'],['tun','🔒','Tunnels'],['w','💰','Wallet'],['contact','📞','Contact']];
 
-// --- PILIER 1 : Nouvelle fonction d'upload Cloudinary ---
 async function uploadFile(file) {
   if (!file) return null;
   toast('Envoi de l\'image...');
@@ -147,7 +145,6 @@ function nav(){
 window.go = t => {tab=t;openT=null;draw()};
 window.setFilter = f => {feedFilter=f; draw()};
 
-// --- AUTHENTIFICATION ---
 let authMode = 'login';
 let authMsg = { type: '', text: '' };
 
@@ -195,14 +192,9 @@ window.loginUser = async () => {
     if(!isLogin) {
       const userCred = await window.FB.createUserWithEmailAndPassword(window.FB.auth, email, pass);
       const uid = userCred.user.uid;
-      
       const code = R(6);
-      
-      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { 
-        name: pseudo, code: code, bal: 0, joined: Date.now() 
-      });
+      await window.FB.set(window.FB.ref(window.FB.db, 'users/' + uid), { name: pseudo, code: code, bal: 0, joined: Date.now() });
       await window.FB.set(window.FB.ref(window.FB.db, 'ids/' + code), uid);
-      
       authMsg = { type: 'success', text: 'Compte créé ! Ton code : ' + code };
     } else {
       await window.FB.signInWithEmailAndPassword(window.FB.auth, email, pass);
@@ -216,11 +208,9 @@ window.loginUser = async () => {
   }
 };
 
-// --- SYNCHRONISATION ---
 window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
   if(user) {
     S.uid = user.uid;
-    
     const adminSnap = await window.FB.get(window.FB.ref(window.FB.db, 'admins/' + user.uid));
     S.isAdmin = adminSnap.exists() && adminSnap.val() === true;
 
@@ -229,22 +219,17 @@ window.FB.onAuthStateChanged(window.FB.auth, async (user) => {
       const data = snap.val();
       S.me = { name: data.name };
       S.code = data.code;
-      
       window.FB.onValue(window.FB.ref(window.FB.db, 'users/' + user.uid + '/bal'), (balSnap) => {
         S.bal = balSnap.val() || 0;
         $('#bl').textContent = kc(S.bal);
         save();
         if(tab === 'w') draw();
       });
-
     }
-    
     S.posts = []; S.mk = []; S.directory = [];
     save(); draw();
     ecouterPosts(); ecouterMarche(); ecouterAnnuaire();
-
     if(S.isAdmin) attachAdminListeners();
-
   } else {
     S.me = null; S.uid = null; S.code = null; S.isAdmin = false;
     S.posts = []; S.mk = []; S.directory = []; save(); draw();
@@ -266,9 +251,6 @@ async function draw(){
   }
 }
 
-// ==========================================
-// 1. FIL D'ACTUALITÉ
-// ==========================================
 async function fFeed(){
   let P=[...(S.posts||[])].filter(p => p && p.ts);
   if (feedFilter === 'edu') P = P.filter(p => p.cat === 'edu');
@@ -352,9 +334,6 @@ function ecouterPosts() {
   });
 }
 
-// ==========================================
-// 2. MARCHÉ
-// ==========================================
 async function fMk(){
   const M = [...(S.mk||[])].filter(m => m && m.ts).sort((a,b)=>b.ts-a.ts);
   return `<div class="k">
@@ -421,9 +400,6 @@ window.buy = async (id, sellerUid, title, price) => {
   }
 }
 
-// ==========================================
-// 3. TUNNELS
-// ==========================================
 async function fTun(){
   if(openT) return chat();
   return `
@@ -517,9 +493,6 @@ window.snd = async () => {
   setTimeout(()=>{const cb=$('#chat-box'); if(cb)cb.scrollTop=cb.scrollHeight;},100);
 }
 
-// ==========================================
-// 4. WALLET (DEMANDES)
-// ==========================================
 async function fW(){
   const buyLink = `https://wa.me/${AIRTEL_NUMBER}?text=${encodeURIComponent(`Bonjour Admin Mbolo, je souhaite acheter des KC. Mon Code est : ${S.code}. Montant FCFA envoyé : `)}`;
   return `<div class="k" style="text-align:center;background:var(--g);color:#fff;padding:30px 16px">
@@ -585,9 +558,6 @@ window.requestTransfer = async () => {
   } catch(e) { toast('Erreur réseau'); }
 }
 
-// ==========================================
-// 5. CONTACT / ANNUAIRE
-// ==========================================
 let directoryFilter = 'all';
 
 async function fContact(){
@@ -647,9 +617,6 @@ function ecouterAnnuaire() {
   });
 }
 
-// ==========================================
-// 6. ADMIN (DASHBOARD)
-// ==========================================
 let isAdminListenerAttached = false;
 
 function attachAdminListeners() {
@@ -766,13 +733,9 @@ window.rejectTransfer = async (reqKey) => {
   toast('Refusé.');
 }
 
-// ==========================================
-// LANCEMENT
-// ==========================================
 draw();
 </script>
 
-<!-- SERVICE WORKER -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
