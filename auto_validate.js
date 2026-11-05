@@ -8,120 +8,93 @@ admin.initializeApp({
 
 const db = admin.database();
 const ADMIN_UID = 'urGWEwETbaMavqbu7jwa6fToUXz2';
-const COMMISSION_RATE = 0.03;
+const FEE_TR = 0.03, FEE_WD = 0.03; 
+const kc = d => (d / 10).toFixed(1) + " KC";
 
-// Fonction d'envoi moderne via Admin SDK (API v1)
-async function sendPush(fcmToken, title, body) {
-  if (!fcmToken) return;
+// 1. Fonction d'envoi des notifications (API Moderne)
+async function sendPush(uid, token, title, body) {
   try {
     await admin.messaging().send({
-      token: fcmToken,
-      notification: { title: title, body: body },
-      webpush: {
-        notification: {
-          icon: '/Mbolo/icon-192.png',
-          vibrate: [200, 100, 200]
-        }
-      }
+      token,
+      data: { title, body },
+      webpush: { headers: { Urgency: 'high', TTL: '86400' } }
     });
-    console.log(`✅ Push envoyé à ${fcmToken.substring(0, 10)}...`);
-  } catch (e) { 
-    console.error("Erreur Push:", e.message); 
+    return true;
+  } catch (e) {
+    console.error("Push échoué:", e.code || e.message);
+    if (e.code === 'messaging/registration-token-not-registered' || e.code === 'messaging/invalid-registration-token') {
+      await db.ref(`users/${uid}/fcmToken`).remove().catch(() => {});
+    }
+    return false;
   }
 }
 
+// 2. Validation des transferts en attente
 async function processTransfers() {
-  console.log("Recherche des demandes en attente...");
-  const requestsRef = db.ref('transfer_requests');
-  const snapshot = await requestsRef.orderByChild('s').equalTo('p').once('value');
+  const snap = await db.ref('transfer_requests').orderByChild('s').equalTo('p').once('value');
+  if (!snap.exists()) { console.log("Aucune demande en attente."); return; }
 
-  if (!snapshot.exists()) {
-    console.log("Aucune demande en attente. Fin du script.");
-    process.exit(0);
-  }
-
-  const requests = snapshot.val();
-  
-  for (const [key, req] of Object.entries(requests)) {
+  for (const [key, r] of Object.entries(snap.val())) {
     try {
-      console.log(`Traitement de la demande ${key} pour ${req.fn}...`);
-      
-      // 1. Vérifier le solde
-      const senderBalSnap = await db.ref(`users/${req.f}/bal`).once('value');
-      const senderBal = senderBalSnap.val() || 0;
-      
-      if (senderBal < req.a) {
-        console.log(`Solde insuffisant pour ${req.fn}. Refusé.`);
-        await db.ref(`transfer_requests/${key}`).update({ s: 'no' });
-        continue;
+      const claim = await db.ref(`transfer_requests/${key}/s`).transaction(cur => cur === 'p' ? 'work' : undefined);
+      if (!claim.committed) { console.log(`${key} déjà traitée.`); continue; }
+
+      const fee = Math.round(r.a * (r.t === 'wd' ? FEE_WD : FEE_TR));
+      let toId = null;
+      if (r.t === 'tr') {
+        toId = (await db.ref(`ids/${r.to}`).once('value')).val();
+        if (!toId) { console.log(`Destinataire ${r.to} inconnu → refusé.`); await db.ref(`transfer_requests/${key}/s`).set('no'); continue; }
       }
 
-      // 2. Trouver le destinataire
-      const receiverIdSnap = await db.ref(`ids/${req.to}`).once('value');
-      const receiverId = receiverIdSnap.val();
+      const debit = await db.ref(`users/${r.f}/bal`).transaction(cur => (cur || 0) >= r.a ? (cur || 0) - r.a : undefined);
+      if (!debit.committed) { console.log(`Solde insuffisant pour ${r.fn} → refusé.`); await db.ref(`transfer_requests/${key}/s`).set('no'); continue; }
+
+      if (toId) await db.ref(`users/${toId}/bal`).transaction(cur => (cur || 0) + r.a - fee);
+      await db.ref(`users/${ADMIN_UID}/bal`).transaction(cur => (cur || 0) + fee);
+
+      const now = Date.now(), U = {};
+      const nid = p => db.ref(p).push().key;
       
-      if (!receiverId) {
-        console.log(`Destinataire ${req.to} introuvable. Refusé.`);
-        await db.ref(`transfer_requests/${key}`).update({ s: 'no' });
-        continue;
-      }
-
-      // 3. Exécuter la transaction (Débit + Crédit)
-      const amount = req.a;
-      let amountForSeller = amount;
-      let commission = 0;
-
-      if (req.t === 'wd') {
-        commission = Math.round(amount * COMMISSION_RATE);
-        amountForSeller = amount - commission;
-      }
-
-      // Débiter l'acheteur
-      await db.ref(`users/${req.f}/bal`).transaction(curr => curr - amount);
-      // Créditer le vendeur/destinataire
-      await db.ref(`users/${receiverId}/bal`).transaction(curr => (curr || 0) + amountForSeller);
+      U[`users/${r.f}/hist/${nid('h')}`] = { t: r.t, txt: r.t === 'wd' ? "Retrait demandé" : "Envoi vers " + (r.to || ""), a: -r.a, ts: now };
+      U[`inbox/${r.f}/${nid('n')}`] = { txt: r.t === 'wd' ? `💸 Ton retrait de ${kc(r.a)} est validé.` : `🔁 Ton envoi de ${kc(r.a)} est validé.`, ts: now };
       
-      // Si commission, créditer l'admin
-      if (commission > 0) {
-        await db.ref(`users/${ADMIN_UID}/bal`).transaction(curr => (curr || 0) + commission);
+      if (toId) {
+        U[`users/${toId}/hist/${nid('h')}`] = { t: 'tr', txt: "Reçu de " + r.fn, a: r.a - fee, ts: now };
+        U[`inbox/${toId}/${nid('n')}`] = { txt: `🎉 Tu as reçu ${kc(r.a - fee)} de ${r.fn}`, ts: now };
       }
-
-      // 4. Marquer comme validé
-      await db.ref(`transfer_requests/${key}`).update({ s: 'ok' });
-      console.log(`Succès : ${req.fn} a envoyé ${amount/10} KC au code ${req.to}.`);
-
-      // --- ENVOI DES NOTIFICATIONS PUSH ---
       
-      // Récupérer le token du destinataire et de l'expéditeur
-      const receiverSnap = await db.ref(`users/${receiverId}`).once('value');
-      const senderSnap = await db.ref(`users/${req.f}/`).once('value');
+      U[`log/${nid('log')}`] = { by: 'robot', t: r.t, f: r.fn, to: r.to || "", a: r.a, fee, ts: now };
+      U[`transfer_requests/${key}/s`] = 'ok';
       
-      const receiverData = receiverSnap.val();
-      const senderData = senderSnap.val();
-
-      // Notification au destinataire (le vendeur)
-      if (receiverData && receiverData.fcmToken) {
-        await sendPush(
-          receiverData.fcmToken, 
-          "💰 Argent reçu !", 
-          `Tu as reçu ${amountForSeller/10} KC de ${req.fn}.`
-        );
-      }
-
-      // Notification à l'expéditeur (l'acheteur)
-      if (senderData && senderData.fcmToken) {
-        await sendPush(
-          senderData.fcmToken, 
-          "✅ Opération validée", 
-          `Ton envoi de ${amount/10} KC vers ${req.to} a été validé.`
-        );
-      }
-
-    } catch (error) {
-      console.error(`Erreur sur la demande ${key}:`, error);
+      await db.ref().update(U);
+      console.log(`✅ ${key} validée (${r.t}, ${kc(r.a)}).`);
+    } catch (e) {
+      console.error(`Erreur sur ${key}:`, e);
+      await db.ref(`transfer_requests/${key}/s`).transaction(cur => cur === 'work' ? 'p' : undefined).catch(() => {});
     }
   }
-  process.exit(0);
 }
 
-processTransfers();
+// 3. Envoi des notifications push pour toutes les nouvelles alertes (Inbox)
+async function pushInbox() {
+  const snap = await db.ref('inbox').once('value');
+  if (!snap.exists()) return;
+  let sent = 0;
+  for (const [uid, items] of Object.entries(snap.val())) {
+    const fresh = Object.entries(items).filter(([, n]) => !n.pushed && n.txt);
+    if (!fresh.length) continue;
+    
+    const token = (await db.ref(`users/${uid}/fcmToken`).once('value')).val();
+    for (const [nk, n] of fresh) {
+      if (token) { await sendPush(uid, token, "Mbolo 🥁", n.txt); sent++; }
+      await db.ref(`inbox/${uid}/${nk}/pushed`).set(true); 
+    }
+  }
+  console.log(`🔔 ${sent} notification(s) push envoyée(s).`);
+}
+
+(async () => {
+  await processTransfers();
+  await pushInbox();
+  process.exit(0);
+})().catch(e => { console.error(e); process.exit(1); });
