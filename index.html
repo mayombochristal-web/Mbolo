@@ -244,7 +244,19 @@ async function draw() {
     if (!ready) { v.innerHTML = "<p class='m' style='text-align:center;padding:40px'>Chargement…</p>"; return; }
     if (!S.uid) { v.innerHTML = fAuth(); return; }
     if (S.susp) { v.innerHTML = `<div class="k" style="text-align:center;border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><p class="m">Contacte l'administration sur WhatsApp.</p><button onclick="out()">Déconnexion</button></div>`; return; }
-    if (!S.name) { v.innerHTML = `<div class="k" style="text-align:center"><p>Préparation…</p><button class="s" onclick="out()">Déconnexion</button></div>`; return; }
+    
+    // Écran de secours si le profil n'a pas pu être chargé/créé
+    if (!S.name) { 
+      v.innerHTML = `
+      <div class="k" style="text-align:center;border:2px solid var(--d)">
+        <h2>⚠️ Problème de profil</h2>
+        <p>Impossible de charger ou de créer votre profil.</p>
+        <p class="m">Vérifiez votre connexion internet et réessayez.</p>
+        <button onclick="location.reload()" class="b" style="width:100%">🔄 Réessayer</button>
+        <button class="s" onclick="out()" style="width:100%">Déconnexion</button>
+      </div>`; 
+      return; 
+    }
 
     const ban = (tab === "tun" && openT) ? "" : ((notifState() === "default" && !notifLater) ? `<div class="k" style="border:2px solid var(--y);text-align:center"><b>🔔 Alertes</b><p class="m" style="margin:6px 0">Reçois les messages et crédits en direct.</p><button class="b" onclick="enableNotifs()" style="width:100%">Activer</button><button class="s" onclick="laterNotif()" style="width:100%">Plus tard</button></div>` : "");
 
@@ -275,20 +287,40 @@ async function submitAuth() {
   try { await (reg ? FB.createUserWithEmailAndPassword : FB.signInWithEmailAndPassword)(auth, p + "@mbolo.app", w); }
   catch (e) { amsg = ERR[e.code] || e.code; draw(); } finally { load(false); }
 }
+
+// ✅ CORRECTION ICI : Création séquentielle (l'un après l'autre) pour respecter les règles
 async function createProfile(u) {
   const name = u.email.split("@")[0];
   for (let i = 0; i < 5; i++) {
-    const code = genCode(), prof = { name, code, bal: 0, joined: Date.now(), tos: Date.now(), avatar: null, bio: "", age: null, address: "" };
-    try { await update(ref(db), { ["users/" + u.uid]: prof, ["ids/" + code]: u.uid }); return prof; } catch (e) {}
+    const code = genCode();
+    const prof = { name, code, bal: 0, joined: Date.now(), tos: Date.now(), avatar: null, bio: "", age: null, address: "" };
+    try { 
+      // 1. On crée d'abord le profil
+      await set(ref(db, "users/" + u.uid), prof); 
+      // 2. On crée le code d'accès seulement si l'étape 1 a réussi
+      await set(ref(db, "ids/" + code), u.uid); 
+      return prof; 
+    } catch (e) { 
+      console.error("Erreur création profil:", e); 
+    }
   }
   return null;
 }
+
 async function initUser(u) {
   clearL(); S = fresh(); S.uid = u.uid; lastBal = null;
   const g = async p => { try { return (await get(ref(db, p))).val(); } catch (e) { return null; } };
   S.admin = (await g("admins/" + u.uid)) === true; S.mod = (await g("moderators/" + u.uid)) === true; S.susp = await g("suspended/" + u.uid);
-  const p = (await g("users/" + u.uid)) || await createProfile(u);
-  if (!p) { toast("Erreur de profil"); draw(); return; }
+  
+  let p = await g("users/" + u.uid);
+  if (!p) p = await createProfile(u);
+  
+  if (!p) { 
+    toast("Erreur de création de profil"); 
+    draw(); // Affiche l'écran d'erreur propre ajouté dans draw()
+    return; 
+  }
+
   Object.assign(S, { name: p.name, code: p.code, avatar: p.avatar, bio: p.bio || "", age: p.age, address: p.address || "" });
   try { S.tun = JSON.parse(localStorage["mbolo_tun_" + u.uid] || "{}"); } catch (e) {}
 
@@ -310,10 +342,7 @@ async function initUser(u) {
 
   listen(ref(db, "config/freeze"), s => { S.freeze = s.val() === true; soft("w"); soft("adm"); });
   
-  // CORRECTION ICI : ajout de orderByKey() pour les posts
   listen(query(ref(db, "posts"), orderByKey(), limitToLast(50)), s => { S.posts = toArr(s); soft("feed"); });
-  
-  // CORRECTION ICI : ajout de orderByKey() pour le marché
   listen(query(ref(db, "marketplace"), orderByKey(), limitToLast(30)), s => { S.mk = toArr(s); soft("mk"); });
   
   listen(ref(db, "directory"), s => { S.dir = toArr(s); soft("contact"); });
@@ -435,7 +464,6 @@ async function op(i) {
   if (!TK[i]) { const p = prompt("Clé secrète de cet espace"); if (!p) return; TK[i] = await tk(i, p); }
   openT = i; S.msgs = []; if (tunOff) tunOff();
   
-  // CORRECTION ICI : ajout de orderByKey() pour le chat
   tunOff = onValue(query(ref(db, "tunnels/" + i), orderByKey(), limitToLast(50)), async s => {
     const oldCount = S.msgs.length;
     S.msgs = toArr(s).sort((a, b) => a.ts - b.ts);
