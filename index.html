@@ -106,7 +106,8 @@ small,.m{color:var(--m);font-size:13px}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, push, set, update, get, remove, onValue, query, orderByKey, limitToLast, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken as getAcToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+import * as DBM from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
 const app = initializeApp({
@@ -118,10 +119,13 @@ const app = initializeApp({
   messagingSenderId: "265201834213",
   appId: "1:265201834213:web:10d2593770cf1d02799c0c"
 });
+let appCheck = null;
 try {
   if (location.hostname === "localhost") self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider("6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B"), isTokenAutoRefreshEnabled: true });
+  appCheck = initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider("6LeIhhAuAAAAAAcu00smHXcACuqeIdh1_EnhWt7B"), isTokenAutoRefreshEnabled: true });
 } catch (e) { console.warn("AppCheck", e); }
+// Mode compatibilité : long-polling HTTP à la place des WebSockets (réseaux/VPN qui bloquent les WebSockets)
+try { if (localStorage.getItem("mbolo_lp") === "1") DBM.forceLongPolling?.(); } catch (e) {}
 const db = getDatabase(app), auth = getAuth(app);
 const msgP = isSupported().then(ok => ok ? getMessaging(app) : null).catch(() => null);
 
@@ -150,6 +154,25 @@ let S = fresh(), A = { rech: {}, tr: {}, rep: {} }, OFF = [], tunOff = null, tab
 let phase = "boot", perr = "", dirSearch = "", authSeq = 0, lastKey = "", msgSeq = 0, lastBal = null, online = true, installEv = null;
 let swReg = null, fcmHooked = false, notifLater = false, notifAsked = false;
 const DEC = new Map();   // cache de déchiffrement
+let slow = false;
+// Délai maximum : une lecture/écriture qui ne reçoit jamais de réponse ne doit plus bloquer l'écran
+const T = (p, ms = 20000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("La base de données ne répond pas (réseau, VPN ou pare-feu)."), { code: "timeout" })), ms))]);
+const withTO = async (name, fn, ms = 9000) => { try { return await T(fn(), ms); } catch (e) { return { fail: true, err: e.code || e.message || String(e), name }; } };
+async function runDiag() {
+  const box = $("#dg"); if (!box) return; box.innerHTML = "<p class='m'>Test en cours… (jusqu'à 30 s)</p>";
+  const host = "mbolo-81868-default-rtdb.firebaseio.com";
+  const rest = await withTO("rest", async () => { const r = await fetch(`https://${host}/.json?shallow=true`, { cache: "no-store" }); return r.status; });
+  const ws = await withTO("ws", () => new Promise((res, rej) => { const w = new WebSocket(`wss://${host}/.ws?v=5&ns=mbolo-81868-default-rtdb`); w.onopen = () => { w.close(); res("ok"); }; w.onerror = () => rej(new Error("websocket refusé")); }));
+  const ac = appCheck ? await withTO("ac", () => getAcToken(appCheck, false), 12000) : { fail: true, err: "non initialisé" };
+  const li = (ok, t) => `<div class="h-item"><span>${ok ? "✅" : "❌"} ${t}</span></div>`;
+  const restOk = !rest.fail, wsOk = !ws.fail, acOk = !ac.fail;
+  let verdict = "";
+  if (!restOk) verdict = "firebaseio.com est injoignable depuis ce téléphone : désactive le VPN / change de réseau (4G) / change le DNS privé.";
+  else if (!wsOk) verdict = "Le site répond mais les WebSockets sont bloqués : active le « mode compatibilité » ci-dessous.";
+  else if (!acOk) verdict = "Réseau OK, mais App Check (reCAPTCHA) échoue : la base refuse la connexion si l'application d'App Check est activée. Vérifie la clé reCAPTCHA et ses domaines autorisés, ou désactive temporairement l'application dans la console.";
+  else verdict = "Tout semble joignable. Réessaie ; si ça bloque encore, envoie-moi cette liste.";
+  box.innerHTML = `<div style="text-align:left">${li(restOk, "Accès HTTPS à la base : " + (restOk ? "HTTP " + rest : esc(rest.err)))}${li(wsOk, "Connexion WebSocket : " + (wsOk ? "ouverte" : esc(ws.err)))}${li(acOk, "App Check : " + (acOk ? "jeton obtenu" : esc(ac.err)))}${li(online, "Base marquée connectée : " + (online ? "oui" : "non"))}</div><p><b>${esc(verdict)}</b></p>`;
+}
 
 const listen = (q, cb) => OFF.push(onValue(q, cb, e => console.warn("listen", e.code)));
 const clearL = () => { OFF.forEach(f => f()); OFF = []; if (tunOff) { tunOff(); tunOff = null; } };
@@ -251,8 +274,10 @@ function draw(opt = {}) {
 function render() {
   if (phase === "boot") return `<p class="m center pad">Chargement…</p>`;
   if (phase === "auth") return fAuth();
-  if (phase === "loading") return `<p class="m center pad">Préparation de ton espace…</p>`;
-  if (phase === "error") return `<div class="k center" style="border:2px solid var(--d)"><h2>⚠️ Connexion impossible</h2><p>${esc(perr)}</p><p class="m">Vérifie ta connexion internet puis réessaie.</p><button class="b full" ${act("retry")}>🔄 Réessayer</button><button class="s full" ${act("out")}>Déconnexion</button></div>`;
+  const lp = localStorage.getItem("mbolo_lp") === "1";
+  const help = `<div id="dg"></div><button class="b full" ${act("diag")}>🔍 Diagnostic de connexion</button><button class="s full" ${act("lp", lp ? "0" : "1")}>${lp ? "Désactiver le mode compatibilité" : "Activer le mode compatibilité (réseaux difficiles)"}</button>`;
+  if (phase === "loading") return slow ? `<div class="k center"><h2>⏳ C'est long…</h2><p class="m">La connexion à la base est lente ou bloquée. Un VPN, un pare-feu ou un réseau qui filtre les WebSockets en est souvent la cause.</p>${help}</div>` : `<p class="m center pad">Préparation de ton espace…</p>`;
+  if (phase === "error") return `<div class="k center" style="border:2px solid var(--d)"><h2>⚠️ Connexion impossible</h2><p>${esc(perr)}</p>${help}<button class="full" ${act("retry")}>🔄 Réessayer</button><button class="s full" ${act("out")}>Déconnexion</button></div>`;
   if (S.susp) return `<div class="k center" style="border:2px solid var(--d)"><h2>🚫 Compte suspendu</h2><p>Motif : <b>${esc(S.susp.why)}</b></p><p class="m">Contacte l'administration sur WhatsApp.</p><button ${act("out")}>Déconnexion</button></div>`;
   const ban = (tab === "tun" && openT) ? "" : ((notifState() === "default" && !notifLater) ? `<div class="k center" style="border:2px solid var(--y)"><b>🔔 Alertes</b><p class="m" style="margin:6px 0">Reçois les messages et crédits en direct.</p><button class="b full" ${act("notif")}>Activer</button><button class="s full" ${act("later")}>Plus tard</button></div>` : "");
   return ban + ({ feed: fFeed, mk: fMk, tun: fTun, w: fW, contact: fContact, adm: fAdm }[tab] || fFeed)();
@@ -285,22 +310,23 @@ async function submitAuth() {
 async function createProfile(u) {
   const name = u.email.split("@")[0], key = "mbolo_pc_" + u.uid;
   let code = localStorage.getItem(key);
-  if (code && (await get(ref(db, "ids/" + code))).val() !== u.uid) code = null;   // réutilise une réservation déjà faite
+  if (code && (await T(get(ref(db, "ids/" + code)))).val() !== u.uid) code = null;   // réutilise une réservation déjà faite
   for (let i = 0; i < 8 && !code; i++) {
     const c = genCode();
-    try { await set(ref(db, "ids/" + c), u.uid); code = c; localStorage.setItem(key, c); }
+    try { await T(set(ref(db, "ids/" + c), u.uid)); code = c; localStorage.setItem(key, c); }
     catch (e) { if (e.code !== "PERMISSION_DENIED") throw e; }   // code déjà pris → on retente
   }
   if (!code) throw new Error("Impossible de réserver un code d'accès. Vérifie que les règles Firebase sont à jour.");
-  await set(ref(db, "users/" + u.uid), { name, code, bal: 0, joined: TS(), tos: TS() });
+  await T(set(ref(db, "users/" + u.uid), { name, code, bal: 0, joined: TS(), tos: TS() }));
   localStorage.removeItem(key);
   return { name, code, bal: 0 };
 }
 
 async function initUser(u, seq) {
-  clearL(); S = fresh(); S.uid = u.uid; lastBal = null; DEC.clear(); phase = "loading"; draw({ reset: true });
+  clearL(); S = fresh(); S.uid = u.uid; lastBal = null; DEC.clear(); phase = "loading"; slow = false; draw({ reset: true });
+  setTimeout(() => { if (phase === "loading" && seq === authSeq) { slow = true; draw({ reset: true }); } }, 8000);
   try {
-    const g = async p => (await get(ref(db, p))).val();
+    const g = async p => (await T(get(ref(db, p)))).val();
     const soft0 = p => g(p).catch(() => null);
     const [adm, mod, susp] = await Promise.all([soft0("admins/" + u.uid), soft0("moderators/" + u.uid), soft0("suspended/" + u.uid)]);
     let p = await g("users/" + u.uid);          // une erreur réseau ICI doit bloquer (jamais "profil absent")
@@ -661,6 +687,8 @@ async function rmRep(k) {
 const ACT = {
   go: id => { tab = id; openT = null; if (tunOff) { tunOff(); tunOff = null; } draw(); scrollTo(0, 0); },
   reload: () => location.reload(),
+  diag: runDiag,
+  lp: id => { try { localStorage.setItem("mbolo_lp", id); } catch (e) {} location.reload(); },
   retry: () => { const u = auth.currentUser; if (u) initUser(u, ++authSeq); else location.reload(); },
   out, mode: id => { mode = id; amsg = ""; draw({ reset: true }); }, auth: submitAuth,
   notif: enableNotifs, later: () => { notifLater = true; draw({ reset: true }); },
