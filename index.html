@@ -186,7 +186,12 @@ if ("serviceWorker" in navigator) {
   const reloadWhenIdle = () => { if (busy()) return setTimeout(reloadWhenIdle, 5000); location.reload(); };
   // Ne recharge que lors d'une MISE À JOUR (pas à la toute première installation)
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (!had || reloading) return; reloading = true; reloadWhenIdle(); });
-  navigator.serviceWorker.register(SW_URL, { scope: "./" }).then(r => { swReg = r; r.update().catch(() => {}); }).catch(e => console.warn("SW", e));
+  // [MODIFIÉ] updateViaCache: "none" + update() à chaque retour au premier plan et toutes les 30 min
+  navigator.serviceWorker.register(SW_URL, { scope: "./", updateViaCache: "none" }).then(r => {
+    swReg = r; r.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") r.update().catch(() => {}); });
+    setInterval(() => r.update().catch(() => {}), 30 * 60 * 1000);
+  }).catch(e => console.warn("SW", e));
 }
 async function getSW() { if (swReg) return swReg; if (!("serviceWorker" in navigator)) return null; try { swReg = await navigator.serviceWorker.ready; return swReg; } catch (e) { return null; } }
 async function notifyUser(title, body) {
