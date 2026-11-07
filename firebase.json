@@ -3,6 +3,9 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      "database.rules.json",
+      "README.md",
+      "LICENSE",
       "**/.*",
       "**/node_modules/**"
     ],
@@ -10,30 +13,34 @@
       {
         "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|css|woff|woff2|ttf|eot|ico)",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=604800"
-          }
+          { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
         ]
       },
       {
         "source": "/index.html",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/manifest.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
         ]
       },
       {
         "source": "/firebase-messaging-sw.js",
         "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
-          }
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+          { "key": "Service-Worker-Allowed", "value": "/" }
         ]
       }
+    ],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
     ]
+  },
+  "database": {
+    "rules": "database.rules.json"
   }
 }
