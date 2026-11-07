@@ -3,7 +3,7 @@
    ⚠️  À CHAQUE déploiement, change UNIQUEMENT la ligne VERSION ci-dessous.
        Cela purge l'ancien cache et force la mise à jour sur tous les appareils.
 */
-const VERSION = "21.0.0";
+const VERSION = "31.0.0";
 const CACHE = "mbolo-" + VERSION;
 
 importScripts("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js");
