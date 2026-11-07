@@ -1,9 +1,9 @@
-/* Mbolo V21 — Service Worker (FCM background + cache PWA)
+/* Mbolo V30 — Service Worker (FCM background + cache PWA)
    ────────────────────────────────────────────────────────
    ⚠️  À CHAQUE déploiement, change UNIQUEMENT la ligne VERSION ci-dessous.
        Cela purge l'ancien cache et force la mise à jour sur tous les appareils.
 */
-const VERSION = "33.0.0";
+const VERSION = "35.0.0";
 const CACHE = "mbolo-" + VERSION;
 
 importScripts("https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js");
@@ -23,8 +23,6 @@ const messaging = firebase.messaging();
 
 /* ---------- FCM : notification en arrière-plan ---------- */
 messaging.onBackgroundMessage(payload => {
-  // Si FCM a déjà tout ce qu'il faut dans `notification` (sans data), il affiche
-  // la notif tout seul : on ne double pas.
   if (payload.notification && !payload.data) return;
 
   const d = payload.data || payload.notification || {};
@@ -96,7 +94,7 @@ self.addEventListener("fetch", e => {
   if (url.origin !== self.location.origin) return;
   if (EXCLUDED_HOSTS.some(h => url.hostname.endsWith(h))) return;
 
-  // HTML / navigation → network-first (on ne cache JAMAIS index.html : jamais de version figée)
+  // HTML / navigation → network-first (jamais de version figée)
   const isDoc = req.mode === "navigate"
     || req.destination === "document"
     || url.pathname === "/"
